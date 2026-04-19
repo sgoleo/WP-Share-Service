@@ -3,7 +3,7 @@
  * Plugin Name: Secure File Share
  * Description: A secure plugin for sharing password-protected files.
  * Version: 1.0.0
- * Author: Leo
+ * Author: sgoleo
  * License: GPL-2.0+
  */
 
@@ -21,6 +21,7 @@ require_once SFS_PATH . 'includes/class-sfs-activator.php';
 require_once SFS_PATH . 'includes/class-sfs-cpt.php';
 require_once SFS_PATH . 'includes/class-sfs-shortcode.php';
 require_once SFS_PATH . 'includes/class-sfs-downloader.php';
+require_once SFS_PATH . 'includes/class-sfs-settings.php';
 
 /**
  * Activation Logic
@@ -40,5 +41,8 @@ function sfs_init() {
 	
 	// Initialize Downloader
 	new SFS_Downloader();
+
+	// Initialize Settings
+	new SFS_Settings();
 }
 add_action( 'init', 'sfs_init' );

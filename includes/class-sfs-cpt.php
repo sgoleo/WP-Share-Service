@@ -34,12 +34,41 @@ class SFS_CPT {
 
 		register_post_type( 'sfs_file', $args );
 		
+		$this->register_taxonomy();
+
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 		add_action( 'save_post', array( $this, 'save_meta_data' ) );
 
 		// Add ID column to list view
 		add_filter( 'manage_sfs_file_posts_columns', array( $this, 'add_id_column' ) );
 		add_action( 'manage_sfs_file_posts_custom_column', array( $this, 'display_id_column' ), 10, 2 );
+	}
+
+	public function register_taxonomy() {
+		$labels = array(
+			'name'              => 'File Categories',
+			'singular_name'     => 'File Category',
+			'search_items'      => 'Search Categories',
+			'all_items'         => 'All Categories',
+			'parent_item'       => 'Parent Category',
+			'parent_item_colon' => 'Parent Category:',
+			'edit_item'         => 'Edit Category',
+			'update_item'       => 'Update Category',
+			'add_new_item'      => 'Add New Category',
+			'new_item_name'     => 'New Category Name',
+			'menu_name'         => 'Categories',
+		);
+
+		$args = array(
+			'hierarchical'      => true,
+			'labels'            => $labels,
+			'show_ui'           => true,
+			'show_admin_column' => true,
+			'query_var'         => true,
+			'rewrite'           => array( 'slug' => 'sfs-category' ),
+		);
+
+		register_taxonomy( 'sfs_category', array( 'sfs_file' ), $args );
 	}
 
 	public function add_id_column( $columns ) {
@@ -143,10 +172,6 @@ class SFS_CPT {
 		if ( ! empty( $_POST['sfs_password'] ) ) {
 			$hashed_password = wp_hash_password( $_POST['sfs_password'] );
 			update_post_meta( $post_id, '_sfs_password', $hashed_password );
-		} elseif ( isset( $_POST['sfs_password'] ) && $_POST['sfs_password'] === '' ) {
-			// If explicitly cleared (optional logic, usually we want a way to make it public)
-			// For simplicity, if empty and field exists, we might want to keep old one unless a "make public" checkbox exists.
-			// Let's assume blank means "no change" unless it's a new post.
 		}
 	}
 }
