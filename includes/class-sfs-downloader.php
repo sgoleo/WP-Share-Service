@@ -45,6 +45,11 @@ class SFS_Downloader {
 			wp_die( 'Error: The requested file could not be found on the server. Please check the error log for details.' );
 		}
 
+		// Increment Download Count
+		$count = get_post_meta( $post_id, '_sfs_download_count', true );
+		$count = $count ? intval( $count ) + 1 : 1;
+		update_post_meta( $post_id, '_sfs_download_count', $count );
+
 		// Clean output buffer to prevent corrupt downloads
 		while ( ob_get_level() > 0 ) {
 			ob_end_clean();
@@ -66,7 +71,17 @@ class SFS_Downloader {
 		// Final check to ensure no extra output
 		if ( ob_get_level() ) ob_end_clean();
 		
-		readfile( $file_path );
+		// Speed & Stability Optimization
+		set_time_limit(0); // Prevent timeout
+		$handle = fopen( $file_path, 'rb' );
+		if ( $handle ) {
+			while ( ! feof( $handle ) ) {
+				echo fread( $handle, 1024 * 1024 ); // 1MB chunks
+				ob_flush();
+				flush();
+			}
+			fclose( $handle );
+		}
 		exit;
 	}
 

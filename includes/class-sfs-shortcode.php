@@ -54,7 +54,7 @@ class SFS_Shortcode {
 		
 		ob_start();
 		?>
-		<div class="sfs-list-wrapper" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box;">
+		<div class="sfs-list-wrapper" style="width: 100%; margin: 0 auto; padding: 20px; box-sizing: border-box;">
 			<!-- Search & Filter Bar -->
 			<div class="sfs-search-container" style="margin-bottom: 40px; text-align: center;">
 				<form method="GET" action="" class="sfs-search-form" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; max-width: 900px; margin: 0 auto;">
@@ -128,7 +128,7 @@ class SFS_Shortcode {
 			</div>
 			
 			<?php if ( $screenshot ) : ?>
-				<div class="sfs-screenshot" style="margin-bottom: 12px; overflow: hidden; border-radius: 15px; background: #f8f9fa; aspect-ratio: 16/9;">
+				<div class="sfs-screenshot" style="margin-bottom: 5px; overflow: hidden; border-radius: 15px; background: #f8f9fa; aspect-ratio: 16/9;">
 					<img src="<?php echo esc_url( $screenshot ); ?>" alt="Screenshot" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease;" />
 				</div>
 			<?php endif; ?>
@@ -191,6 +191,7 @@ class SFS_Shortcode {
 		.sfs-close-btn:hover, .sfs-modal-overlay span:hover { color: #2d3436 !important; transform: rotate(90deg); }
 		.sfs-search-container input:focus, .sfs-search-container select:focus { border-color: #0984e3 !important; background: #fff !important; }
 		.sfs-download-section button:active { transform: scale(0.98); }
+		.sfs-description p { margin-top: 0; margin-bottom: 10px; }
 		@media (max-width: 768px) {
 			.sfs-search-form { flex-direction: column; align-items: stretch; }
 			.sfs-search-form > div, .sfs-search-form button { width: 100% !important; }

@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Secure File Share
+ * Plugin Name: WP Share Service
  * Description: A secure plugin for sharing password-protected files.
  * Version: 1.0.0
- * Author: sgoleo
+ * Author: sgoleo, sgoplus.one
  * License: GPL-2.0+
  */
 

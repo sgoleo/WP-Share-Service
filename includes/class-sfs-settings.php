@@ -20,7 +20,7 @@ class SFS_Settings {
 	public function render_settings_page() {
 		?>
 		<div class="wrap" style="background: #f0f0f1; padding: 20px; border-radius: 12px;">
-			<h1 style="font-weight: 700; color: #1d2327;">Secure File Share Settings</h1>
+			<h1 style="font-weight: 700; color: #1d2327;">WP Share Service Settings</h1>
 			<p style="color: #646970;">Manage your secure file sharing preferences and developer information.</p>
 			<hr style="border: 0; border-top: 1px solid #dcdcde; margin: 20px 0;">
 			
@@ -33,7 +33,7 @@ class SFS_Settings {
 					</h2>
 					<table class="form-table" role="presentation">
 						<tr>
-							<th scope="row"><strong>官方網站</strong></th>
+							<th scope="row"><strong>Website</strong></th>
 							<td><a href="https://sgoplus.one" target="_blank" style="text-decoration: none; color: #0073aa;">sgoplus.one</a></td>
 						</tr>
 						<tr>
@@ -65,8 +65,16 @@ class SFS_Settings {
 					<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
 						<p><strong>Plugin Version:</strong> <?php echo SFS_VERSION; ?></p>
 						<p><strong>Environment:</strong> Apache 2.4 / Nginx Compatible</p>
+						<p><strong>Upload Max Size:</strong> <?php echo ini_get('upload_max_filesize'); ?></p>
 					</div>
 				</div>
+			</div>
+
+			<!-- Get PRO Section -->
+			<div style="margin-top: 30px; background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); padding: 40px; border-radius: 20px; color: #fff; text-align: center; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.2);">
+				<h2 style="color: #fff; margin-top: 0; font-size: 2em; font-weight: 800;">Get PRO</h2>
+				<p style="font-size: 1.2em; opacity: 0.9; max-width: 800px; margin: 0 auto 25px auto;">Buy SGOplus SiteService or Join Insider Program to Unlock PRO version for extra functions</p>
+				<a href="https://sgoplus.one/wp-share-service/" target="_blank" class="button button-primary button-large" style="background: #fff; color: #6c5ce7; border: none; font-weight: 800; padding: 10px 40px; height: auto; font-size: 1.1em; border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">Unlock PRO Version</a>
 			</div>
 
 			<div style="margin-top: 40px; text-align: center; color: #a7aaad;">

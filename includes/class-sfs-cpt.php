@@ -39,7 +39,7 @@ class SFS_CPT {
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 		add_action( 'save_post', array( $this, 'save_meta_data' ) );
 
-		// Add ID column to list view
+		// Add ID and Downloads columns to list view
 		add_filter( 'manage_sfs_file_posts_columns', array( $this, 'add_id_column' ) );
 		add_action( 'manage_sfs_file_posts_custom_column', array( $this, 'display_id_column' ), 10, 2 );
 	}
@@ -77,6 +77,10 @@ class SFS_CPT {
 			if ( $key === 'title' ) {
 				$new_columns['sfs_id'] = 'ID / Shortcode';
 			}
+			// Place Downloads before the last column (usually date)
+			if ( $key === 'date' ) {
+				$new_columns['sfs_downloads'] = 'Downloads';
+			}
 			$new_columns[ $key ] = $value;
 		}
 		return $new_columns;
@@ -86,6 +90,10 @@ class SFS_CPT {
 		if ( $column === 'sfs_id' ) {
 			echo '<code>' . intval( $post_id ) . '</code><br>';
 			echo '<small><code>[sgo_file_share id="' . intval( $post_id ) . '"]</code></small>';
+		}
+		if ( $column === 'sfs_downloads' ) {
+			$count = get_post_meta( $post_id, '_sfs_download_count', true );
+			echo '<strong>' . ( $count ? intval( $count ) : 0 ) . '</strong>';
 		}
 	}
 
@@ -107,10 +115,11 @@ class SFS_CPT {
 		$file_url = get_post_meta( $post->ID, '_sfs_file_url', true );
 		$update_log = get_post_meta( $post->ID, '_sfs_update_log', true );
 		$has_password = get_post_meta( $post->ID, '_sfs_password', true ) ? ' (Password set)' : ' (Public)';
+		$download_count = get_post_meta( $post->ID, '_sfs_download_count', true ) ?: 0;
 
-		echo '<div style="background: #e7f7ff; padding: 10px; border: 1px solid #bce8f1; border-radius: 4px; margin-bottom: 15px;">';
-		echo '<strong>Shortcode Usage:</strong><br>';
-		echo '<code>[sgo_file_share id="' . intval( $post->ID ) . '"]</code>';
+		echo '<div style="background: #e7f7ff; padding: 15px; border: 1px solid #bce8f1; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">';
+		echo '<div><strong>Shortcode:</strong><br><code>[sgo_file_share id="' . intval( $post->ID ) . '"]</code></div>';
+		echo '<div style="text-align: right;"><span style="font-size: 0.9em; color: #666;">Total Downloads</span><br><strong style="font-size: 1.5em; color: #0073aa;">' . intval( $download_count ) . '</strong></div>';
 		echo '</div>';
 
 		echo '<p><label><strong>File Upload:</strong></label><br>';
