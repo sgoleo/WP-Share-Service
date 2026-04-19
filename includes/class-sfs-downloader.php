@@ -3,7 +3,8 @@
 class SFS_Downloader {
 
 	public function __construct() {
-		add_action( 'init', array( $this, 'handle_download_request' ) );
+		// Use a slightly later hook to ensure all headers are ready
+		add_action( 'init', array( $this, 'handle_download_request' ), 20 );
 	}
 
 	public function handle_download_request() {
@@ -23,7 +24,7 @@ class SFS_Downloader {
 
 		// Verify Password
 		$hashed_password = get_post_meta( $post_id, '_sfs_password', true );
-		if ( $hashed_password ) {
+		if ( ! empty( $hashed_password ) ) {
 			$submitted_password = isset( $_POST['sfs_password'] ) ? $_POST['sfs_password'] : '';
 			if ( ! wp_check_password( $submitted_password, $hashed_password ) ) {
 				wp_die( 'Incorrect password. Please try again.' );
@@ -38,16 +39,14 @@ class SFS_Downloader {
 
 		// Convert URL to Path
 		$file_path = $this->url_to_path( $file_url );
+		
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			error_log( 'SFS Error: File path not found or inaccessible: ' . $file_path );
-			wp_die( 'Error: The requested file could not be found on the server.' );
+			error_log( "SFS Error: File path not found or inaccessible.\nURL: $file_url\nResolved Path: $file_path" );
+			wp_die( 'Error: The requested file could not be found on the server. Please check the error log for details.' );
 		}
 
-		// Log download (optional but good practice)
-		// error_log( 'SFS: File downloaded - ' . $file_path );
-
 		// Clean output buffer to prevent corrupt downloads
-		if ( ob_get_level() ) {
+		while ( ob_get_level() > 0 ) {
 			ob_end_clean();
 		}
 
@@ -64,27 +63,45 @@ class SFS_Downloader {
 		header( 'Pragma: public' );
 		header( 'Content-Length: ' . $file_size );
 
-		// Clear buffer again just in case
-		flush();
-
-		// Use readfile for streaming
+		// Final check to ensure no extra output
+		if ( ob_get_level() ) ob_end_clean();
+		
 		readfile( $file_path );
 		exit;
 	}
 
 	/**
-	 * Helper to convert a WordPress URL to a server path
+	 * Robustly convert a WordPress URL to a server path
 	 */
 	private function url_to_path( $url ) {
 		$upload_dir = wp_upload_dir();
+		
+		// 1. Try simple string replacement (handles most cases)
 		$base_url = $upload_dir['baseurl'];
 		$base_path = $upload_dir['basedir'];
 
-		if ( strpos( $url, $base_url ) === 0 ) {
-			return str_replace( $base_url, $base_path, $url );
+		// Normalize protocols for comparison
+		$norm_url = str_replace( array( 'http://', 'https://' ), '//', $url );
+		$norm_base_url = str_replace( array( 'http://', 'https://' ), '//', $base_url );
+
+		if ( strpos( $norm_url, $norm_base_url ) === 0 ) {
+			return str_replace( $norm_base_url, $base_path, $norm_url );
 		}
 
-		// Fallback for paths outside uploads (not recommended for this plugin)
+		// 2. Try to resolve via attachment ID if it's in the media library
+		$attachment_id = attachment_url_to_postid( $url );
+		if ( $attachment_id ) {
+			return get_attached_file( $attachment_id );
+		}
+
+		// 3. Last resort: try to match relative path from wp-content
+		$content_url = content_url();
+		$norm_content_url = str_replace( array( 'http://', 'https://' ), '//', $content_url );
+		if ( strpos( $norm_url, $norm_content_url ) === 0 ) {
+			$rel_path = str_replace( $norm_content_url, '', $norm_url );
+			return WP_CONTENT_DIR . $rel_path;
+		}
+
 		return false;
 	}
 }
