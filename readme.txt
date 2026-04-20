@@ -1,7 +1,7 @@
 === Plugin Name ===
 SGOplus WP Share
 
-Contributors: sgoleo
+Contributors: sgoleo, sgoplus
 Tags: file sharing, secure download, password protection
 Requires at least: 6.5
 Tested up to: 6.9
