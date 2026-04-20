@@ -77,7 +77,7 @@ class SFS_Downloader {
 
 		$file_path = $this->url_to_path( $file_url );
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			wp_die( 'Error: The requested file could not be found on the server.' );
+			wp_die( 'Error: The requested file could not be found on the server. Path: ' . esc_html($file_path) );
 		}
 
 		// --- PRO Logic Start ---
@@ -111,30 +111,35 @@ class SFS_Downloader {
 		$file_size = filesize( $file_path );
 		$mime_type = wp_check_filetype( $file_name )['type'] ?: 'application/octet-stream';
 
+		// Acceleration Optimization
+		$accel_mode = get_option( 'sfs_acceleration_mode', 'standard' );
+
 		header( 'Content-Description: File Transfer' );
 		header( 'Content-Type: ' . $mime_type );
 		header( 'Content-Disposition: attachment; filename="' . $file_name . '"' );
 		header( 'Expires: 0' );
 		header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
 		header( 'Pragma: public' );
-		header( 'Content-Length: ' . $file_size );
 
-		if ( ob_get_level() ) ob_end_clean();
-
-		// Acceleration Optimization
-		$accel_mode = get_option( 'sfs_acceleration_mode', 'standard' );
-		
 		if ( $accel_mode === 'x_sendfile' ) {
+			// Apache / LiteSpeed
 			header( 'X-Sendfile: ' . $file_path );
 			exit;
-		} elseif ( $accel_mode === 'x_accel' ) {
-			// This requires internal path mapping usually
-			$relative_path = str_replace( ABSPATH, '/', $file_path );
-			header( 'X-Accel-Redirect: ' . $relative_path );
+		} elseif ( $accel_mode === 'x_accel' || $accel_mode === 'x_litespeed' ) {
+			// Nginx or LiteSpeed
+			// Both use a relative URI path from the web root
+			$relative_path = str_replace( trailingslashit( str_replace( '\\', '/', ABSPATH ) ), '/', str_replace( '\\', '/', $file_path ) );
+			
+			if ( $accel_mode === 'x_litespeed' ) {
+				header( 'X-LiteSpeed-Location: ' . $relative_path );
+			} else {
+				header( 'X-Accel-Redirect: ' . $relative_path );
+			}
 			exit;
 		}
-		
+
 		// Fallback: Standard PHP Chunked
+		header( 'Content-Length: ' . $file_size );
 		set_time_limit(0); 
 		$handle = fopen( $file_path, 'rb' );
 		if ( $handle ) {

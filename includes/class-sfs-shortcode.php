@@ -156,12 +156,6 @@ class SFS_Shortcode {
 		?>
 		<div class="sfs-container <?php echo $is_grid ? 'sfs-grid-card' : ''; ?>" style="border: 1px solid #eef0f2; padding: 25px; border-radius: 20px; width: 100%; max-width: <?php echo $is_grid ? 'none' : '600px'; ?>; margin: <?php echo $is_grid ? '0' : '20px auto'; ?>; background: #fff; box-shadow: 0 12px 35px rgba(0,0,0,0.04); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); position: relative;">
 			
-			<?php if ( $is_expired || $limit_reached ) : ?>
-				<div style="position: absolute; top: 15px; left: 15px; background: #ff7675; color: #fff; padding: 5px 12px; border-radius: 8px; font-size: 0.75em; font-weight: 800; z-index: 10;">UNAVAILABLE</div>
-			<?php elseif ( ! empty( $allowed_roles ) ) : ?>
-				<div style="position: absolute; top: 15px; left: 15px; background: #6c5ce7; color: #fff; padding: 5px 12px; border-radius: 8px; font-size: 0.75em; font-weight: 800; z-index: 10;">MEMBERS ONLY</div>
-			<?php endif; ?>
-
 			<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 15px;">
 				<h2 style="margin: 0; font-size: 1.35em; color: #1a1a1a; line-height: 1.3; font-weight: 700;"><?php echo esc_html( $post->post_title ); ?></h2>
 				<?php if ( ! empty( $update_log ) ) : ?>
@@ -170,9 +164,21 @@ class SFS_Shortcode {
 			</div>
 			
 			<?php if ( $screenshot ) : ?>
-				<div class="sfs-screenshot" style="margin-bottom: 5px; overflow: hidden; border-radius: 15px; background: #f8f9fa; aspect-ratio: 16/9;">
+				<div class="sfs-screenshot" style="margin-bottom: 15px; overflow: hidden; border-radius: 15px; background: #f8f9fa; aspect-ratio: 16/9; position: relative;">
 					<img src="<?php echo esc_url( $screenshot ); ?>" alt="Screenshot" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease;" />
+					
+					<?php if ( $is_expired || $limit_reached ) : ?>
+						<div style="position: absolute; top: 12px; left: 12px; background: #ff7675; color: #fff; padding: 5px 12px; border-radius: 8px; font-size: 0.7em; font-weight: 800; z-index: 10; letter-spacing: 0.5px;">UNAVAILABLE</div>
+					<?php elseif ( ! empty( $allowed_roles ) ) : ?>
+						<div style="position: absolute; top: 12px; left: 12px; background: #6c5ce7; color: #fff; padding: 5px 12px; border-radius: 8px; font-size: 0.7em; font-weight: 800; z-index: 10; letter-spacing: 0.5px;">MEMBERS</div>
+					<?php endif; ?>
 				</div>
+			<?php else: ?>
+				<?php if ( $is_expired || $limit_reached ) : ?>
+					<div style="display: inline-block; background: #ff7675; color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.7em; font-weight: 800; margin-bottom: 15px; letter-spacing: 0.5px;">UNAVAILABLE</div>
+				<?php elseif ( ! empty( $allowed_roles ) ) : ?>
+					<div style="display: inline-block; background: #6c5ce7; color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.7em; font-weight: 800; margin-bottom: 15px; letter-spacing: 0.5px;">MEMBERS</div>
+				<?php endif; ?>
 			<?php endif; ?>
 
 			<div class="sfs-description" style="margin-bottom: 25px; color: #555; font-size: 0.95em; line-height: 1.7; height: 3.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
