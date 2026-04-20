@@ -19,11 +19,11 @@ class Downloader {
 		}
 
 		// Verify Nonce for security
-		if ( ! isset( $_POST['sfs_download_nonce'] ) || ! wp_verify_nonce( $_POST['sfs_download_nonce'], 'sfs_download_file' ) ) {
+		if ( ! isset( $_POST['sfs_download_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['sfs_download_nonce'] ) ), 'sfs_download_file' ) ) {
 			wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'sgoplus-wp-share' ) );
 		}
 
-		$post_id = isset( $_POST['sfs_id'] ) ? intval( $_POST['sfs_id'] ) : 0;
+		$post_id = isset( $_POST['sfs_id'] ) ? intval( wp_unslash( $_POST['sfs_id'] ) ) : 0;
 		if ( ! $post_id ) {
 			wp_die( esc_html__( 'Invalid File ID.', 'sgoplus-wp-share' ) );
 		}
@@ -56,7 +56,7 @@ class Downloader {
 		// Check Expiration Date (PRO)
 		$expiry_date = get_post_meta( $post_id, '_sfs_expiry_date', true );
 		if ( ! empty( $expiry_date ) ) {
-			$today = date( 'Y-m-d' );
+			$today = gmdate( 'Y-m-d' );
 			if ( $today > $expiry_date ) {
 				wp_die( esc_html__( 'Error: This download link has expired.', 'sgoplus-wp-share' ) );
 			}
@@ -74,7 +74,7 @@ class Downloader {
 		// Verify Password
 		$hashed_password = get_post_meta( $post_id, '_sfs_password', true );
 		if ( ! empty( $hashed_password ) ) {
-			$submitted_password = isset( $_POST['sfs_password'] ) ? sanitize_text_field( $_POST['sfs_password'] ) : '';
+			$submitted_password = isset( $_POST['sfs_password'] ) ? sanitize_text_field( wp_unslash( $_POST['sfs_password'] ) ) : '';
 			if ( ! wp_check_password( $submitted_password, $hashed_password ) ) {
 				wp_die( esc_html__( 'Incorrect password. Please try again.', 'sgoplus-wp-share' ) );
 			}
@@ -102,7 +102,7 @@ class Downloader {
 			$to = get_option( 'admin_email' );
 			$subject = '[SGOplus WP Share] New Download: ' . get_the_title( $post_id );
 			$user_info = is_user_logged_in() ? wp_get_current_user()->display_name : 'Guest';
-			$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : 'Unknown';
+			$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'Unknown';
 			$message = "File: " . get_the_title( $post_id ) . "\nBy: " . $user_info . "\nIP: " . $ip_address . "\nTime: " . current_time( 'mysql' );
 			wp_mail( $to, $subject, $message );
 		}
@@ -130,7 +130,7 @@ class Downloader {
 		}
 
 		// Server Detection for Compatibility
-		$server_soft = isset( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : '';
+		$server_soft = isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '';
 		$is_apache = ( stripos( $server_soft, 'apache' ) !== false );
 		$is_nginx  = ( stripos( $server_soft, 'nginx' ) !== false );
 		$is_litespeed = ( stripos( $server_soft, 'litespeed' ) !== false );
@@ -166,14 +166,19 @@ class Downloader {
 
 		// Fallback: Standard PHP Streaming
 		header( 'Content-Length: ' . $file_size );
+		// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
 		set_time_limit( 0 );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 		$handle = fopen( $file_path, 'rb' );
 		if ( $handle ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
 			while ( ! feof( $handle ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo fread( $handle, 1024 * 1024 );
 				ob_flush();
 				flush();
 			}
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 			fclose( $handle );
 		}
 		exit;
@@ -185,15 +190,16 @@ class Downloader {
 		
 		$user_id = get_current_user_id();
 		$user_status = is_user_logged_in() ? 'member' : 'guest';
-		$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : 'Unknown';
-		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ) : 'Unknown';
+		$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'Unknown';
+		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : 'Unknown';
 		
 		// Basic Country Detection
 		$country = 'Unknown';
 		if ( isset( $_SERVER['HTTP_CF_IPCOUNTRY'] ) ) { // Cloudflare
-			$country = sanitize_text_field( $_SERVER['HTTP_CF_IPCOUNTRY'] );
+			$country = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_IPCOUNTRY'] ) );
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->insert(
 			$table_name,
 			array(

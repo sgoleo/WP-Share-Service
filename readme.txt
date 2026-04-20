@@ -5,7 +5,7 @@ Contributors: sgoleo, sgoplus
 Tags: file sharing, secure download, password protection
 Requires at least: 6.5
 Tested up to: 6.9
-Stable tag: 1.0.0
+Stable tag: 1.2.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -28,4 +28,5 @@ Key features include:
 1. Upload the `sgoplus-wp-share` folder to the `/wp-content/plugins/` directory.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 3. Go to 'Share Service+' in the admin menu to start sharing files.
-4. Use the shortcode `[sgo_file_share id="123"]` to display the download card on any page or post.
+4. Use the shortcode `[sgoplus_file id="123"]` to display the download card on any page or post.
+5. Use the shortcode `[sgoplus_files category="slug" limit="5"]` to list multiple files.

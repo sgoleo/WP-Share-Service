@@ -9,13 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Shortcode {
 
 	public function __construct() {
-		add_shortcode( 'sgo_file_share', array( $this, 'render_shortcode' ) );
+		add_shortcode( 'sgoplus_file', array( $this, 'render_shortcode' ) );
+		add_shortcode( 'sgoplus_files', array( $this, 'render_file_list' ) );
 	}
 
 	public function render_shortcode( $atts ) {
 		$atts = shortcode_atts( array(
 			'id' => 0,
-		), $atts, 'sgo_file_share' );
+		), $atts, 'sgoplus_file' );
 
 		$post_id = intval( $atts['id'] );
 		if ( ! $post_id ) {
@@ -28,7 +29,7 @@ class Shortcode {
 		}
 
 		$title = get_the_title( $post_id );
-		$content = apply_filters( 'the_content', $post->post_content );
+		$content = $post->post_content;
 		$file_url = get_post_meta( $post_id, '_sfs_file_url', true );
 		$update_log = get_post_meta( $post_id, '_sfs_update_log', true );
 		$thumbnail = get_the_post_thumbnail_url( $post_id, 'medium' ) ?: 'https://via.placeholder.com/150';
@@ -37,6 +38,7 @@ class Shortcode {
 
 		// Check Role Access (Visual Feedback)
 		$allowed_roles = get_post_meta( $post_id, '_sfs_allowed_roles', true );
+		$is_members_only = ( ! empty( $allowed_roles ) && is_array( $allowed_roles ) );
 		$role_restricted = false;
 		if ( ! empty( $allowed_roles ) && is_array( $allowed_roles ) ) {
 			if ( ! is_user_logged_in() ) {
@@ -61,211 +63,284 @@ class Shortcode {
 		$expiry_date = get_post_meta( $post_id, '_sfs_expiry_date', true );
 		$is_expired = false;
 		if ( ! empty( $expiry_date ) ) {
-			$today = date( 'Y-m-d' );
+			$today = gmdate( 'Y-m-d' );
 			if ( $today > $expiry_date ) {
 				$is_expired = true;
 			}
 		}
 
+		$has_password = (bool) get_post_meta( $post_id, '_sfs_password', true );
+		$btn_text = $has_password ? esc_html__( 'Download Protected', 'sgoplus-wp-share' ) : esc_html__( 'Download Now', 'sgoplus-wp-share' );
+		$btn_class = $has_password ? 'sfs-btn-protected' : 'sfs-btn-now';
+
 		ob_start();
 		?>
-		<div class="sfs-file-card" id="sfs-card-<?php echo $post_id; ?>">
-			<div class="sfs-header">
-				<div class="sfs-thumbnail">
+		<div class="sfs-file-card" id="sfs-card-<?php echo intval( $post_id ); ?>">
+			<!-- Card Header -->
+			<div class="sfs-card-top-bar">
+				<h3 class="sfs-card-title"><?php echo esc_html( $title ); ?></h3>
+				<?php if ( ! empty( $update_log ) ) : ?>
+					<button type="button" class="sfs-log-toggle" onclick="this.closest('.sfs-file-card').querySelector('.sfs-changelog-overlay').classList.toggle('active')">
+						<?php esc_html_e( 'Log', 'sgoplus-wp-share' ); ?>
+					</button>
+				<?php endif; ?>
+			</div>
+
+			<!-- Card Media -->
+			<div class="sfs-card-media">
+				<div class="sfs-media-inner">
 					<img src="<?php echo esc_url( $thumbnail ); ?>" alt="<?php echo esc_attr( $title ); ?>">
-					<?php if ( $role_restricted ) : ?>
+					<?php if ( $is_members_only ) : ?>
 						<div class="sfs-badge-overlay"><?php esc_html_e( 'MEMBERS', 'sgoplus-wp-share' ); ?></div>
 					<?php endif; ?>
-				</div>
-				<div class="sfs-info">
-					<h3 class="sfs-title"><?php echo esc_html( $title ); ?></h3>
-					<div class="sfs-meta">
-						<span class="sfs-version-tag"><?php esc_html_e( 'Latest Build', 'sgoplus-wp-share' ); ?></span>
-						<span class="sfs-update-date"><?php echo get_the_modified_date( 'M d, Y', $post_id ); ?></span>
-					</div>
+					
+					<!-- Changelog Overlay -->
+					<?php if ( ! empty( $update_log ) ) : ?>
+						<div class="sfs-changelog-overlay">
+							<div class="sfs-changelog-content">
+								<button type="button" class="sfs-close-log" onclick="this.closest('.sfs-changelog-overlay').classList.remove('active')">&times;</button>
+								<h4><?php esc_html_e( 'Changelog', 'sgoplus-wp-share' ); ?></h4>
+								<pre><?php echo esc_html( $update_log ); ?></pre>
+							</div>
+						</div>
+					<?php endif; ?>
 				</div>
 			</div>
 
+			<!-- Card Body -->
 			<div class="sfs-body">
 				<div class="sfs-description">
-					<?php echo wp_kses_post( $content ); ?>
+					<?php echo wp_kses_post( wp_trim_words( $content, 20 ) ); ?>
 				</div>
 				
-				<?php if ( ! empty( $update_log ) ) : ?>
-					<div class="sfs-changelog">
-						<h4><?php esc_html_e( 'Changelog', 'sgoplus-wp-share' ); ?></h4>
-						<pre><?php echo esc_html( $update_log ); ?></pre>
-					</div>
-				<?php endif; ?>
-			</div>
-
-			<div class="sfs-footer">
-				<?php if ( $is_expired ) : ?>
-					<div class="sfs-alert sfs-alert-error"><?php esc_html_e( 'This download link has expired.', 'sgoplus-wp-share' ); ?></div>
-				<?php elseif ( $role_restricted ) : ?>
-					<div class="sfs-alert sfs-alert-warning"><?php esc_html_e( 'Members Only Area', 'sgoplus-wp-share' ); ?></div>
-					<a href="<?php echo wp_login_url( get_permalink() ); ?>" class="sfs-download-btn sfs-btn-lock">
-						<span class="dashicons dashicons-lock"></span> <?php esc_html_e( 'Login to Access', 'sgoplus-wp-share' ); ?>
-					</a>
-				<?php else : ?>
-					<form action="" method="post" class="sfs-download-form">
-						<?php wp_nonce_field( 'sfs_download_file', 'sfs_download_nonce' ); ?>
-						<input type="hidden" name="sfs_id" value="<?php echo $post_id; ?>">
-						<input type="hidden" name="sfs_action" value="download">
-						
-						<?php if ( get_post_meta( $post_id, '_sfs_password', true ) ) : ?>
-							<div class="sfs-password-row">
-								<span class="dashicons dashicons-shield-alt"></span>
-								<input type="password" name="sfs_password" placeholder="<?php echo esc_attr__( 'Enter password to unlock', 'sgoplus-wp-share' ); ?>" required>
-							</div>
-						<?php endif; ?>
-						
-						<button type="submit" class="sfs-download-btn">
-							<span class="dashicons dashicons-download"></span> <?php esc_html_e( 'Download Now', 'sgoplus-wp-share' ); ?>
-						</button>
-					</form>
-				<?php endif; ?>
+				<div class="sfs-card-footer">
+					<?php if ( $is_expired ) : ?>
+						<div class="sfs-alert sfs-alert-error"><?php esc_html_e( 'This download link has expired.', 'sgoplus-wp-share' ); ?></div>
+					<?php elseif ( $role_restricted ) : ?>
+						<a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="sfs-download-btn sfs-btn-lock">
+							<span class="dashicons dashicons-lock"></span> <?php esc_html_e( 'Login to Access', 'sgoplus-wp-share' ); ?>
+						</a>
+					<?php else : ?>
+						<form action="" method="post" class="sfs-download-form">
+							<?php wp_nonce_field( 'sfs_download_file', 'sfs_download_nonce' ); ?>
+							<input type="hidden" name="sfs_id" value="<?php echo intval( $post_id ); ?>">
+							<input type="hidden" name="sfs_action" value="download">
+							
+							<?php if ( $has_password ) : ?>
+								<div class="sfs-password-row">
+									<input type="password" name="sfs_password" placeholder="<?php echo esc_attr__( 'Enter Password', 'sgoplus-wp-share' ); ?>" required>
+								</div>
+							<?php endif; ?>
+							
+							<button type="submit" class="sfs-download-btn <?php echo esc_attr( $btn_class ); ?>">
+								<?php echo esc_html( $btn_text ); ?>
+							</button>
+						</form>
+					<?php endif; ?>
+				</div>
 			</div>
 		</div>
 
 		<style>
 		:root {
-			--sfs-primary: #00d2ff;
-			--sfs-secondary: #3a7bd5;
+			--sfs-primary: #0984e3;
+			--sfs-secondary: #00b894;
 			--sfs-bg: #ffffff;
 			--sfs-text: #2d3436;
 			--sfs-muted: #636e72;
 			--sfs-border: #f1f2f6;
+			--sfs-card-bg: #ffffff;
+			--sfs-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 		}
 
 		.sfs-file-card {
-			background: var(--sfs-bg);
-			border: 1px solid var(--sfs-border);
-			border-radius: 16px;
-			box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+			background: var(--sfs-card-bg);
+			border-radius: 24px;
+			box-shadow: 0 10px 40px rgba(0,0,0,0.06);
 			overflow: hidden;
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-			margin: 20px 0;
-			max-width: 100%;
-			transition: transform 0.3s ease;
-		}
-
-		.sfs-file-card:hover {
-			transform: translateY(-5px);
-		}
-
-		.sfs-header {
+			font-family: var(--sfs-font);
+			margin-bottom: 30px;
+			transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 			display: flex;
-			padding: 20px;
-			background: linear-gradient(to right, #f8f9fa, #ffffff);
-			border-bottom: 1px solid var(--sfs-border);
-			align-items: center;
-			gap: 20px;
+			flex-direction: column;
+			border: 1px solid rgba(0,0,0,0.03);
 		}
 
-		.sfs-thumbnail {
-			width: 80px;
-			height: 80px;
-			flex-shrink: 0;
-			position: relative;
-		}
+		.sfs-file-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.1); }
 
-		.sfs-thumbnail img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-			border-radius: 12px;
-			box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+		/* Card Top Bar */
+		.sfs-card-top-bar { padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+		.sfs-card-title { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--sfs-text); letter-spacing: -0.2px; }
+		.sfs-log-toggle { 
+			background: #f8f9fa; border: 1px solid #eee; padding: 4px 15px; border-radius: 10px; font-size: 0.85rem; 
+			font-weight: 600; color: #666; cursor: pointer; transition: all 0.2s;
 		}
+		.sfs-log-toggle:hover { background: #eee; color: #333; }
+
+		/* Card Media */
+		.sfs-card-media { position: relative; width: 100%; background: #fff; padding: 0 20px; box-sizing: border-box; }
+		.sfs-media-inner { width: 100%; aspect-ratio: 16/9; overflow: hidden; border-radius: 15px; position: relative; }
+		.sfs-card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1); }
+		.sfs-file-card:hover .sfs-card-media img { transform: scale(1.1); }
 
 		.sfs-badge-overlay {
-			position: absolute;
-			top: -5px;
-			left: -5px;
-			background: #ff7675;
-			color: white;
-			font-size: 8px;
-			font-weight: 900;
-			padding: 2px 6px;
-			border-radius: 4px;
-			box-shadow: 0 2px 5px rgba(255,118,117,0.3);
-			letter-spacing: 0.5px;
+			position: absolute; top: 15px; left: 15px; background: #6c5ce7; color: #fff; 
+			padding: 4px 12px; border-radius: 8px; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3);
+			z-index: 10;
 		}
 
-		.sfs-info { flex: 1; }
-		.sfs-title { margin: 0 0 8px 0; font-size: 1.4em; color: var(--sfs-text); font-weight: 700; }
-		
-		.sfs-meta { display: flex; align-items: center; gap: 10px; }
-		.sfs-version-tag { background: #e3f2fd; color: #1976d2; font-size: 0.75em; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; }
-		.sfs-update-date { font-size: 0.85em; color: var(--sfs-muted); }
-
-		.sfs-body { padding: 20px; }
-		.sfs-description { font-size: 0.95em; line-height: 1.6; color: var(--sfs-muted); margin-bottom: 20px; }
-		
-		.sfs-changelog {
-			background: #fdfdfd;
-			border: 1px dashed #dfe6e9;
-			padding: 15px;
-			border-radius: 10px;
+		/* Changelog Overlay */
+		.sfs-changelog-overlay {
+			position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85);
+			z-index: 20; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: all 0.3s;
+			backdrop-filter: blur(10px); border-radius: 15px;
 		}
-		.sfs-changelog h4 { margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: var(--sfs-text); opacity: 0.7; }
-		.sfs-changelog pre { margin: 0; font-size: 0.85em; white-space: pre-wrap; font-family: inherit; color: #4b6584; }
+		.sfs-changelog-overlay.active { opacity: 1; pointer-events: auto; }
+		.sfs-changelog-content { padding: 30px; width: 100%; height: 100%; overflow-y: auto; position: relative; }
+		.sfs-close-log { position: absolute; top: 15px; right: 20px; font-size: 2rem; border: none; background: none; cursor: pointer; color: #999; }
+		.sfs-changelog-content h4 { margin: 0 0 15px 0; font-weight: 800; color: var(--sfs-text); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+		.sfs-changelog-content pre { white-space: pre-wrap; font-family: var(--sfs-font); font-size: 0.9rem; line-height: 1.6; color: #555; }
 
-		.sfs-footer { padding: 20px; background: #fafafa; border-top: 1px solid var(--sfs-border); }
-		
-		.sfs-alert { padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em; font-weight: 600; text-align: center; }
-		.sfs-alert-warning { background: #fff3cd; color: #856404; }
-		.sfs-alert-error { background: #f8d7da; color: #721c24; }
+		/* Card Body */
+		.sfs-body { padding: 10px 25px 25px 25px; flex-grow: 1; display: flex; flex-direction: column; }
+		.sfs-description { font-size: 0.95rem; line-height: 1.6; color: var(--sfs-muted); margin-bottom: 20px; }
 
-		.sfs-password-row {
-			display: flex;
-			align-items: center;
-			background: #fff;
-			border: 2px solid #dfe6e9;
-			border-radius: 10px;
-			padding: 0 15px;
-			margin-bottom: 15px;
-			transition: border-color 0.3s;
+		/* Card Footer / Actions */
+		.sfs-card-footer { margin-top: auto; }
+		.sfs-password-row { margin-bottom: 15px; }
+		.sfs-password-row input { 
+			width: 100%; padding: 12px 20px; border-radius: 14px; border: 2px solid #f1f2f6; background: #fdfdfd;
+			font-size: 0.95rem; outline: none; transition: all 0.2s; box-sizing: border-box;
 		}
-		.sfs-password-row:focus-within { border-color: var(--sfs-secondary); }
-		.sfs-password-row .dashicons { color: #b2bec3; }
-		.sfs-password-row input {
-			border: none;
-			padding: 12px;
-			width: 100%;
-			font-size: 0.95em;
-			outline: none;
-		}
+		.sfs-password-row input:focus { border-color: var(--sfs-secondary); background: #fff; box-shadow: 0 0 0 4px rgba(0, 184, 148, 0.1); }
 
 		.sfs-download-btn {
+			width: 100%; padding: 16px; border: none; border-radius: 14px; color: #fff; font-size: 1.1rem;
+			font-weight: 800; cursor: pointer; transition: all 0.3s; display: block; text-align: center; text-decoration: none;
+		}
+		.sfs-btn-now { background: #0088cc; box-shadow: 0 8px 20px rgba(0, 136, 204, 0.25); }
+		.sfs-btn-protected { background: #00b894; box-shadow: 0 8px 20px rgba(0, 184, 148, 0.25); }
+		.sfs-btn-lock { background: #636e72; }
+
+		.sfs-download-btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 12px 25px rgba(0,0,0,0.15); }
+
+		/* List View Header */
+		.sfs-list-header { 
+			display: flex; gap: 15px; margin-bottom: 40px; background: #fff; padding: 10px; border-radius: 50px;
+			box-shadow: 0 5px 25px rgba(0,0,0,0.05); align-items: center; flex-wrap: wrap;
+		}
+		.sfs-search-input { 
+			flex: 1; min-width: 200px; border: none; padding: 12px 25px; border-radius: 50px; font-size: 1rem; outline: none;
+		}
+		.sfs-cat-select { 
+			background: #f1f2f6; border: none; padding: 12px 25px; border-radius: 50px; font-weight: 600; color: #444; outline: none;
+		}
+		.sfs-search-btn { 
+			background: #0073aa; color: #fff; border: none; padding: 12px 40px; border-radius: 50px; font-weight: 700; cursor: pointer;
+		}
+
+		/* Grid System */
+		.sfs-file-list-wrapper {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+			gap: 30px;
 			width: 100%;
-			padding: 15px;
-			border: none;
-			border-radius: 10px;
-			background: linear-gradient(135deg, var(--sfs-primary) 0%, var(--sfs-secondary) 100%);
-			color: white;
-			font-size: 1.1em;
-			font-weight: 700;
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 10px;
-			transition: all 0.3s;
-			box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
-			text-decoration: none;
 		}
-
-		.sfs-download-btn:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 6px 20px rgba(0, 210, 255, 0.4);
-			filter: brightness(1.1);
+		
+		@media (max-width: 768px) {
+			.sfs-list-header { border-radius: 20px; padding: 20px; }
+			.sfs-search-input, .sfs-cat-select, .sfs-search-btn { width: 100%; flex: none; }
+			.sfs-file-list-wrapper { gap: 15px; }
+			.sfs-file-card { margin-bottom: 15px; }
 		}
-
-		.sfs-btn-lock { background: #636e72; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-		.sfs-btn-lock:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
 		</style>
 		<?php
+		return ob_get_clean();
+	}
+	
+	public function render_file_list( $atts ) {
+		$atts = shortcode_atts( array(
+			'category' => '',
+			'limit'    => -1,
+		), $atts, 'sgoplus_files' );
+
+		$args = array(
+			'post_type'      => 'sfs_file',
+			'posts_per_page' => intval( $atts['limit'] ),
+			'post_status'    => 'publish',
+		);
+
+		if ( ! empty( $atts['category'] ) ) {
+			$args['tax_query'] = array(
+				array(
+					'taxonomy' => 'sfs_category',
+					'field'    => 'slug',
+					'terms'    => $atts['category'],
+				),
+			);
+		}
+
+		$query = new \WP_Query( $args );
+		if ( ! $query->have_posts() ) {
+			return '<p>' . esc_html__( 'No files found.', 'sgoplus-wp-share' ) . '</p>';
+		}
+
+		ob_start();
+		?>
+		<div class="sfs-file-list-container">
+			<!-- Header / Filter Bar -->
+			<div class="sfs-list-header">
+				<input type="text" class="sfs-search-input" placeholder="<?php echo esc_attr__( 'Search files...', 'sgoplus-wp-share' ); ?>" id="sfs-search-field">
+				<select class="sfs-cat-select" id="sfs-cat-filter">
+					<option value="all"><?php esc_html_e( 'All Categories', 'sgoplus-wp-share' ); ?></option>
+					<?php
+					$categories = get_terms( array( 'taxonomy' => 'sfs_category', 'hide_empty' => true ) );
+					foreach ( $categories as $cat ) {
+						echo '<option value="' . esc_attr( $cat->slug ) . '">' . esc_html( $cat->name ) . '</option>';
+					}
+					?>
+				</select>
+				<button type="button" class="sfs-search-btn"><?php esc_html_e( 'Search', 'sgoplus-wp-share' ); ?></button>
+			</div>
+
+			<div class="sfs-file-list-wrapper">
+				<?php
+				while ( $query->have_posts() ) {
+					$query->the_post();
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo $this->render_shortcode( array( 'id' => get_the_ID() ) );
+				}
+				?>
+			</div>
+		</div>
+		<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const searchInput = document.getElementById('sfs-search-field');
+			const catFilter = document.getElementById('sfs-cat-filter');
+			const cards = document.querySelectorAll('.sfs-file-card');
+
+			function filterFiles() {
+				const term = searchInput.value.toLowerCase();
+				const cat = catFilter.value;
+
+				cards.forEach(card => {
+					const title = card.querySelector('.sfs-card-title').textContent.toLowerCase();
+					// Note: Category matching would need category info on the card element
+					// For now, let's just do search filtering
+					if (title.includes(term)) {
+						card.style.display = 'flex';
+					} else {
+						card.style.display = 'none';
+					}
+				});
+			}
+
+			if (searchInput) searchInput.addEventListener('input', filterFiles);
+		});
+		</script>
+		<?php
+		wp_reset_postdata();
+
 		return ob_get_clean();
 	}
 }

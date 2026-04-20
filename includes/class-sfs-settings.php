@@ -82,7 +82,11 @@ class Settings {
 		$response = wp_remote_get( $query_url, array( 'timeout' => 20 ) );
 
 		if ( is_wp_error( $response ) ) {
-			add_settings_error( 'sfs_license_key', 'api_error', sprintf( esc_html__( 'Connection error: %s. Please try again in 3 seconds.', 'sgoplus-wp-share' ), $response->get_error_message() ) );
+			add_settings_error( 'sfs_license_key', 'api_error', sprintf( 
+				/* translators: %s: connection error message */
+				esc_html__( 'Connection error: %s. Please try again in 3 seconds.', 'sgoplus-wp-share' ), 
+				$response->get_error_message() 
+			) );
 			return $old_key; // Revert to old key to maintain state
 		}
 
@@ -211,7 +215,7 @@ class Settings {
 					<div class="card" style="padding: 30px 20px; border-radius: 15px; text-align: center; border: 1px solid #e5e5e5; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #fff; margin: 0; position: sticky; top: 50px;">
 						<h3 style="margin-top: 0; color: #1d2327; font-size: 1.2em;">Developer Hub</h3>
 						<div style="margin: 20px 0;">
-							<img src="https://sgoplus.one/wp-content/uploads/2023/06/SGOplus-Logo-Round.png" alt="SGOplus" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f8f9fa; box-shadow: 0 5px 15px rgba(0,0,0,0.05);" onerror="this.src='https://secure.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=90&d=mm&r=g';">
+							<img src="<?php echo esc_url( SGOPLUS_SFS_URL . 'assets/logo.png' ); ?>" alt="SGOplus" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f8f9fa; box-shadow: 0 5px 15px rgba(0,0,0,0.05);" onerror="this.src='https://secure.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=90&d=mm&r=g';">
 						</div>
 						
 						<p style="font-weight: 800; font-size: 1.2em; margin: 0 0 5px 0; color: #1d2327;">SGOplus Group</p>
@@ -233,7 +237,7 @@ class Settings {
 						<hr style="margin: 25px 0; border: 0; border-top: 1px solid #f0f0f1;">
 						
 						<div style="font-size: 0.85em; color: #999;">
-							<p style="margin: 0;">SGOplus WP Share <strong>v1.0.0</strong></p>
+							<p style="margin: 0;">SGOplus WP Share <strong>v1.2.0</strong></p>
 							<p style="margin: 5px 0 0 0;">© 2026 SGOplus</p>
 						</div>
 					</div>
@@ -263,7 +267,8 @@ class Settings {
 
 		// Handle Clear Logs
 		if ( isset( $_POST['sfs_clear_logs'] ) && check_admin_referer( 'sfs_clear_logs_nonce' ) ) {
-			$wpdb->query( "TRUNCATE TABLE $table_name" );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
 			echo '<div class="updated"><p>' . esc_html__( 'Logs cleared successfully.', 'sgoplus-wp-share' ) . '</p></div>';
 		}
 
@@ -271,8 +276,10 @@ class Settings {
 		$per_page = 20;
 		$offset = ( $pagenum - 1 ) * $per_page;
 
-		$total_logs = $wpdb->get_var( "SELECT COUNT(id) FROM $table_name" );
-		$logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $table_name ORDER BY timestamp DESC LIMIT %d, %d", $offset, $per_page ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$total_logs = $wpdb->get_var( "SELECT COUNT(id) FROM `{$table_name}`" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table_name}` ORDER BY timestamp DESC LIMIT %d, %d", $offset, $per_page ) );
 		
 		$num_pages = ceil( $total_logs / $per_page );
 		?>
@@ -291,16 +298,20 @@ class Settings {
 				
 				<?php if ( $num_pages > 1 ) : ?>
 					<div class="tablenav-pages">
-						<span class="displaying-num"><?php echo sprintf( esc_html__( '%d items', 'sgoplus-wp-share' ), intval( $total_logs ) ); ?></span>
+						<span class="displaying-num"><?php echo sprintf( 
+							/* translators: %d: total number of items */
+							esc_html__( '%d items', 'sgoplus-wp-share' ), 
+							intval( $total_logs ) 
+						); ?></span>
 						<?php
-						echo paginate_links( array(
+						echo wp_kses_post( paginate_links( array(
 							'base'      => add_query_arg( 'paged', '%#%' ),
 							'format'    => '',
 							'prev_text' => esc_html__( '&laquo;', 'sgoplus-wp-share' ),
 							'next_text' => esc_html__( '&raquo;', 'sgoplus-wp-share' ),
 							'total'     => $num_pages,
 							'current'   => $pagenum,
-						) );
+						) ) );
 						?>
 					</div>
 				<?php endif; ?>

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SGOplus WP Share
  * Description: A secure plugin for sharing password-protected files with advanced performance optimization.
- * Version: 1.0.0
+ * Version: 1.2.0
  * Author: SGOplus
  * Author URI: https://sgoplus.one
  * License: GPLv2 or later
@@ -10,7 +10,7 @@
  * Requires at least: 6.5
  * Tested up to: 6.9
  * Requires PHP: 7.4
- * Stable tag: 1.0.0
+ * Stable tag: 1.2.0
  * Text Domain: sgoplus-wp-share
  */
 
@@ -21,16 +21,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'SFS_VERSION', '1.8.5' );
-define( 'SFS_PATH', plugin_dir_path( __FILE__ ) );
-define( 'SFS_URL', plugin_dir_url( __FILE__ ) );
+define( 'SGOPLUS_SFS_VERSION', '1.2.0' );
+define( 'SGOPLUS_SFS_PATH', plugin_dir_path( __FILE__ ) );
+define( 'SGOPLUS_SFS_URL', plugin_dir_url( __FILE__ ) );
 
 // Include required classes
-require_once SFS_PATH . 'includes/class-sfs-activator.php';
-require_once SFS_PATH . 'includes/class-sfs-cpt.php';
-require_once SFS_PATH . 'includes/class-sfs-shortcode.php';
-require_once SFS_PATH . 'includes/class-sfs-downloader.php';
-require_once SFS_PATH . 'includes/class-sfs-settings.php';
+require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-activator.php';
+require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-cpt.php';
+require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-shortcode.php';
+require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-downloader.php';
+require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-settings.php';
 
 /**
  * Global Helper: Check if PRO license is active

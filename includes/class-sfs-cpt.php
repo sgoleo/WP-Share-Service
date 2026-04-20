@@ -131,7 +131,7 @@ class CPT {
 		$is_pro = is_sfs_pro_active();
 
 		echo '<div style="background: #e7f7ff; padding: 15px; border: 1px solid #bce8f1; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">';
-		echo '<div><strong>' . esc_html__( 'Shortcode:', 'sgoplus-wp-share' ) . '</strong><br><code>[sgo_file_share id="' . intval( $post->ID ) . '"]</code></div>';
+		echo '<div><strong>' . esc_html__( 'Shortcode:', 'sgoplus-wp-share' ) . '</strong><br><code>[sgoplus_file id="' . intval( $post->ID ) . '"]</code></div>';
 		echo '<div style="text-align: right;"><span style="font-size: 0.9em; color: #666;">' . esc_html__( 'Total Downloads', 'sgoplus-wp-share' ) . '</span><br><strong style="font-size: 1.5em; color: #0073aa;">' . intval( $download_count ) . '</strong></div>';
 		echo '</div>';
 
@@ -141,7 +141,12 @@ class CPT {
 			echo '<button type="button" class="button" id="sfs_upload_btn">' . esc_html__( 'Select', 'sgoplus-wp-share' ) . '</button></div>';
 			
 			echo '<div><label><strong>' . esc_html__( 'Password:', 'sgoplus-wp-share' ) . '</strong>' . esc_html( $has_password ) . '</label><br>';
-			echo '<input type="password" name="sfs_password" value="" placeholder="' . esc_attr__( 'Leave blank to keep', 'sgoplus-wp-share' ) . '" style="width:100%;" /></div>';
+			echo '<div style="display:flex; gap:10px; align-items:center;">';
+			echo '<input type="password" name="sfs_password" value="" placeholder="' . esc_attr__( 'Set new password', 'sgoplus-wp-share' ) . '" style="flex:1;" />';
+			if ( get_post_meta( $post->ID, '_sfs_password', true ) ) {
+				echo '<label style="color:#d63031; font-weight:600; cursor:pointer;"><input type="checkbox" name="sfs_clear_password" value="1" /> ' . esc_html__( 'Clear', 'sgoplus-wp-share' ) . '</label>';
+			}
+			echo '</div></div>';
 		echo '</div>';
 
 		// PRO Advanced Controls Section
@@ -171,7 +176,7 @@ class CPT {
 				foreach ( $wp_roles->role_names as $role_slug => $role_name ) {
 					$checked = in_array( $role_slug, $allowed_roles ) ? 'checked' : '';
 					$disabled = ! $is_pro ? 'disabled' : '';
-					echo '<label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="sfs_allowed_roles[]" value="' . esc_attr( $role_slug ) . '" ' . $checked . ' ' . $disabled . '> ' . esc_html( $role_name ) . '</label>';
+					echo '<label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="sfs_allowed_roles[]" value="' . esc_attr( $role_slug ) . '" ' . esc_attr( $checked ) . ' ' . esc_attr( $disabled ) . '> ' . esc_html( $role_name ) . '</label>';
 				}
 				echo '</div><p style="font-size: 0.85em; color: #666;">' . esc_html__( 'If none selected, role restriction is disabled.', 'sgoplus-wp-share' ) . '</p></div>';
 				
@@ -206,7 +211,7 @@ class CPT {
 
 	public function save_meta_data( $post_id ) {
 		// Security checks
-		if ( ! isset( $_POST['sfs_nonce'] ) || ! wp_verify_nonce( $_POST['sfs_nonce'], 'sfs_save_meta' ) ) {
+		if ( ! isset( $_POST['sfs_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['sfs_nonce'] ) ), 'sfs_save_meta' ) ) {
 			return;
 		}
 
@@ -220,17 +225,20 @@ class CPT {
 
 		// Save File URL
 		if ( isset( $_POST['sfs_file_url'] ) ) {
-			update_post_meta( $post_id, '_sfs_file_url', sanitize_text_field( $_POST['sfs_file_url'] ) );
+			update_post_meta( $post_id, '_sfs_file_url', sanitize_text_field( wp_unslash( $_POST['sfs_file_url'] ) ) );
 		}
 
 		// Save Update Log
 		if ( isset( $_POST['sfs_update_log'] ) ) {
-			update_post_meta( $post_id, '_sfs_update_log', sanitize_textarea_field( $_POST['sfs_update_log'] ) );
+			update_post_meta( $post_id, '_sfs_update_log', sanitize_textarea_field( wp_unslash( $_POST['sfs_update_log'] ) ) );
 		}
 
 		// Save Password (Hashed)
-		if ( ! empty( $_POST['sfs_password'] ) ) {
-			$hashed_password = wp_hash_password( $_POST['sfs_password'] );
+		if ( isset( $_POST['sfs_clear_password'] ) && '1' === $_POST['sfs_clear_password'] ) {
+			delete_post_meta( $post_id, '_sfs_password' );
+		} elseif ( ! empty( $_POST['sfs_password'] ) ) {
+			$raw_password = sanitize_text_field( wp_unslash( $_POST['sfs_password'] ) );
+			$hashed_password = wp_hash_password( $raw_password );
 			update_post_meta( $post_id, '_sfs_password', $hashed_password );
 		}
 
@@ -238,16 +246,16 @@ class CPT {
 		if ( is_sfs_pro_active() ) {
 			// PRO: Download Limit
 			if ( isset( $_POST['sfs_download_limit'] ) ) {
-				update_post_meta( $post_id, '_sfs_download_limit', intval( $_POST['sfs_download_limit'] ) );
+				update_post_meta( $post_id, '_sfs_download_limit', intval( wp_unslash( $_POST['sfs_download_limit'] ) ) );
 			}
 
 			// PRO: Expiry Date
 			if ( isset( $_POST['sfs_expiry_date'] ) ) {
-				update_post_meta( $post_id, '_sfs_expiry_date', sanitize_text_field( $_POST['sfs_expiry_date'] ) );
+				update_post_meta( $post_id, '_sfs_expiry_date', sanitize_text_field( wp_unslash( $_POST['sfs_expiry_date'] ) ) );
 			}
 
 			// PRO: Allowed Roles
-			$roles = isset( $_POST['sfs_allowed_roles'] ) ? array_map( 'sanitize_text_field', $_POST['sfs_allowed_roles'] ) : array();
+			$roles = isset( $_POST['sfs_allowed_roles'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['sfs_allowed_roles'] ) ) : array();
 			update_post_meta( $post_id, '_sfs_allowed_roles', $roles );
 
 			// PRO: Notifications
