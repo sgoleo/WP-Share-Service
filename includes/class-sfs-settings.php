@@ -267,8 +267,8 @@ class Settings {
 
 		// Handle Clear Logs
 		if ( isset( $_POST['sfs_clear_logs'] ) && check_admin_referer( 'sfs_clear_logs_nonce' ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->query( "TRUNCATE TABLE `{$table_name}`" );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $table_name ) );
 			echo '<div class="updated"><p>' . esc_html__( 'Logs cleared successfully.', 'sgoplus-wp-share' ) . '</p></div>';
 		}
 
@@ -276,10 +276,10 @@ class Settings {
 		$per_page = 20;
 		$offset = ( $pagenum - 1 ) * $per_page;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$total_logs = $wpdb->get_var( "SELECT COUNT(id) FROM `{$table_name}`" );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table_name}` ORDER BY timestamp DESC LIMIT %d, %d", $offset, $per_page ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total_logs = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM %i", $table_name ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i ORDER BY timestamp DESC LIMIT %d, %d", $table_name, $offset, $per_page ) );
 		
 		$num_pages = ceil( $total_logs / $per_page );
 		?>

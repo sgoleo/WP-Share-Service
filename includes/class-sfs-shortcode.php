@@ -233,7 +233,12 @@ class Shortcode {
 			flex: 1; min-width: 200px; border: none; padding: 12px 25px; border-radius: 50px; font-size: 1rem; outline: none;
 		}
 		.sfs-cat-select { 
-			background: #f1f2f6; border: none; padding: 12px 25px; border-radius: 50px; font-weight: 600; color: #444; outline: none;
+			background: #f1f2f6; border: none; padding: 12px 40px 12px 25px; border-radius: 50px; font-weight: 600; color: #444; outline: none;
+			appearance: none; -webkit-appearance: none;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+			background-repeat: no-repeat;
+			background-position: right 15px center;
+			cursor: pointer;
 		}
 		.sfs-search-btn { 
 			background: #0073aa; color: #fff; border: none; padding: 12px 40px; border-radius: 50px; font-weight: 700; cursor: pointer;
