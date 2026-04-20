@@ -116,10 +116,52 @@ class SFS_Shortcode {
 		$has_password = get_post_meta( $post_id, '_sfs_password', true );
 		$screenshot = get_the_post_thumbnail_url( $post_id, 'large' );
 
+		// PRO Limits
+		$download_limit = get_post_meta( $post_id, '_sfs_download_limit', true );
+		$expiry_date = get_post_meta( $post_id, '_sfs_expiry_date', true );
+		$current_count = get_post_meta( $post_id, '_sfs_download_count', true ) ?: 0;
+		$allowed_roles = get_post_meta( $post_id, '_sfs_allowed_roles', true ) ?: array();
+
+		$is_expired = false;
+		if ( ! empty( $expiry_date ) && date( 'Y-m-d' ) > $expiry_date ) {
+			$is_expired = true;
+		}
+
+		$limit_reached = false;
+		if ( ! empty( $download_limit ) && intval( $download_limit ) > 0 && intval( $current_count ) >= intval( $download_limit ) ) {
+			$limit_reached = true;
+		}
+
+		$is_restricted = false;
+		if ( ! empty( $allowed_roles ) ) {
+			if ( ! is_user_logged_in() ) {
+				$is_restricted = true;
+			} else {
+				$user = wp_get_current_user();
+				$user_roles = (array) $user->roles;
+				$has_role = false;
+				foreach ( $allowed_roles as $role ) {
+					if ( in_array( $role, $user_roles ) ) {
+						$has_role = true;
+						break;
+					}
+				}
+				if ( ! $has_role && ! current_user_can( 'administrator' ) ) {
+					$is_restricted = true;
+				}
+			}
+		}
+
 		ob_start();
 		?>
-		<div class="sfs-container <?php echo $is_grid ? 'sfs-grid-card' : ''; ?>" style="border: 1px solid #eef0f2; padding: 25px; border-radius: 20px; width: 100%; max-width: <?php echo $is_grid ? 'none' : '600px'; ?>; margin: <?php echo $is_grid ? '0' : '20px auto'; ?>; background: #fff; box-shadow: 0 12px 35px rgba(0,0,0,0.04); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);">
+		<div class="sfs-container <?php echo $is_grid ? 'sfs-grid-card' : ''; ?>" style="border: 1px solid #eef0f2; padding: 25px; border-radius: 20px; width: 100%; max-width: <?php echo $is_grid ? 'none' : '600px'; ?>; margin: <?php echo $is_grid ? '0' : '20px auto'; ?>; background: #fff; box-shadow: 0 12px 35px rgba(0,0,0,0.04); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); position: relative;">
 			
+			<?php if ( $is_expired || $limit_reached ) : ?>
+				<div style="position: absolute; top: 15px; left: 15px; background: #ff7675; color: #fff; padding: 5px 12px; border-radius: 8px; font-size: 0.75em; font-weight: 800; z-index: 10;">UNAVAILABLE</div>
+			<?php elseif ( ! empty( $allowed_roles ) ) : ?>
+				<div style="position: absolute; top: 15px; left: 15px; background: #6c5ce7; color: #fff; padding: 5px 12px; border-radius: 8px; font-size: 0.75em; font-weight: 800; z-index: 10;">MEMBERS ONLY</div>
+			<?php endif; ?>
+
 			<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 15px;">
 				<h2 style="margin: 0; font-size: 1.35em; color: #1a1a1a; line-height: 1.3; font-weight: 700;"><?php echo esc_html( $post->post_title ); ?></h2>
 				<?php if ( ! empty( $update_log ) ) : ?>
@@ -138,21 +180,42 @@ class SFS_Shortcode {
 			</div>
 
 			<div class="sfs-download-section">
-				<?php if ( $has_password ) : ?>
-					<form method="POST" action="">
-						<input type="hidden" name="sfs_action" value="download" />
-						<input type="hidden" name="sfs_id" value="<?php echo esc_attr( $post_id ); ?>" />
-						<div style="display: flex; flex-direction: column; gap: 12px;">
-							<input type="password" name="sfs_password" required placeholder="Enter Password" style="padding: 14px 18px; border: 1px solid #eee; border-radius: 12px; background: #fafafa; font-size: 0.95em;" />
-							<button type="submit" style="padding: 14px; background: #00b894; color: #fff; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 1em; box-shadow: 0 8px 20px rgba(0,184,148,0.2); transition: all 0.3s;">Download Protected</button>
-						</div>
-					</form>
+				<?php if ( $is_expired ) : ?>
+					<button disabled style="padding: 15px; background: #dfe6e9; color: #636e72; border: none; border-radius: 15px; cursor: not-allowed; font-size: 1.05em; width: 100%; font-weight: 700;">Link Expired</button>
+				<?php elseif ( $limit_reached ) : ?>
+					<button disabled style="padding: 15px; background: #dfe6e9; color: #636e72; border: none; border-radius: 15px; cursor: not-allowed; font-size: 1.05em; width: 100%; font-weight: 700;">Limit Reached</button>
+				<?php elseif ( $is_restricted ) : ?>
+					<div style="text-align: center; padding: 15px; background: #f8f7ff; border: 1px dashed #6c5ce7; border-radius: 15px; color: #6c5ce7;">
+						<span class="dashicons dashicons-lock" style="font-size: 1.2em; width: auto; height: auto; vertical-align: middle;"></span>
+						<span style="font-weight: 700; font-size: 0.9em;"> Restricted to Members </span>
+						<?php if ( ! is_user_logged_in() ) : ?>
+							<br><a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="font-size: 0.85em; text-decoration: underline; color: #6c5ce7; font-weight: 800; margin-top: 5px; display: inline-block;">Login to Download</a>
+						<?php endif; ?>
+					</div>
 				<?php else : ?>
 					<form method="POST" action="">
 						<input type="hidden" name="sfs_action" value="download" />
 						<input type="hidden" name="sfs_id" value="<?php echo esc_attr( $post_id ); ?>" />
-						<button type="submit" style="padding: 15px; background: #0984e3; color: #fff; border: none; border-radius: 15px; cursor: pointer; font-size: 1.05em; width: 100%; font-weight: 700; box-shadow: 0 8px 25px rgba(9,132,227,0.25); transition: all 0.3s;">Download Now</button>
+						<?php if ( $has_password ) : ?>
+							<div style="display: flex; flex-direction: column; gap: 12px;">
+								<input type="password" name="sfs_password" required placeholder="Enter Password" style="padding: 14px 18px; border: 1px solid #eee; border-radius: 12px; background: #fafafa; font-size: 0.95em;" />
+								<button type="submit" style="padding: 14px; background: #00b894; color: #fff; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 1em; box-shadow: 0 8px 20px rgba(0,184,148,0.2); transition: all 0.3s;">Download Protected</button>
+							</div>
+						<?php else : ?>
+							<button type="submit" style="padding: 15px; background: #0984e3; color: #fff; border: none; border-radius: 15px; cursor: pointer; font-size: 1.05em; width: 100%; font-weight: 700; box-shadow: 0 8px 25px rgba(9,132,227,0.25); transition: all 0.3s;">Download Now</button>
+						<?php endif; ?>
 					</form>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $download_limit ) || ! empty( $expiry_date ) ) : ?>
+					<div style="margin-top: 15px; font-size: 0.8em; color: #b2bec3; display: flex; justify-content: space-between;">
+						<?php if ( ! empty( $download_limit ) ) : ?>
+							<span>Limit: <?php echo intval( $current_count ); ?>/<?php echo intval( $download_limit ); ?></span>
+						<?php endif; ?>
+						<?php if ( ! empty( $expiry_date ) ) : ?>
+							<span>Expires: <?php echo esc_html( $expiry_date ); ?></span>
+						<?php endif; ?>
+					</div>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -172,8 +235,8 @@ class SFS_Shortcode {
 				var modal = document.getElementById("sfs-modal-<?php echo $post_id; ?>");
 				var btn = document.querySelector(".sfs-open-log-<?php echo $post_id; ?>");
 				var span = document.querySelector(".sfs-close-<?php echo $post_id; ?>");
-				btn.onclick = function() { modal.style.display = "block"; document.body.style.overflow = "hidden"; }
-				span.onclick = function() { modal.style.display = "none"; document.body.style.overflow = "auto"; }
+				if (btn) btn.onclick = function() { modal.style.display = "block"; document.body.style.overflow = "hidden"; }
+				if (span) span.onclick = function() { modal.style.display = "none"; document.body.style.overflow = "auto"; }
 				window.addEventListener('click', function(e) { if (e.target == modal) { modal.style.display = "none"; document.body.style.overflow = "auto"; } });
 			})();
 			</script>

@@ -4,15 +4,16 @@ class SFS_CPT {
 
 	public function register_post_type() {
 		$labels = array(
-			'name'               => 'Secure Files',
-			'singular_name'      => 'Secure File',
-			'menu_name'          => 'Secure Files',
+			'name'               => 'Shared Files',
+			'singular_name'      => 'Shared File',
+			'menu_name'          => 'Share Service+',
+			'all_items'          => 'Shared Files',
 			'add_new'            => 'Add New',
-			'add_new_item'       => 'Add New Secure File',
-			'edit_item'          => 'Edit Secure File',
-			'new_item'           => 'New Secure File',
-			'view_item'          => 'View Secure File',
-			'search_items'       => 'Search Secure Files',
+			'add_new_item'       => 'Add New Shared File',
+			'edit_item'          => 'Edit Shared File',
+			'new_item'           => 'New Shared File',
+			'view_item'          => 'View Shared File',
+			'search_items'       => 'Search Shared Files',
 			'not_found'          => 'No files found',
 			'not_found_in_trash' => 'No files found in trash',
 		);
@@ -25,11 +26,11 @@ class SFS_CPT {
 			'show_ui'             => true,
 			'show_in_menu'        => true,
 			'query_var'           => true,
-			'rewrite'             => array( 'slug' => 'secure-file' ),
+			'rewrite'             => array( 'slug' => 'shared-file' ),
 			'capability_type'     => 'post',
 			'hierarchical'        => false,
 			'supports'            => array( 'title', 'editor', 'thumbnail' ),
-			'menu_icon'           => 'dashicons-shield-lock',
+			'menu_icon'           => 'dashicons-share-alt2',
 		);
 
 		register_post_type( 'sfs_file', $args );
@@ -65,7 +66,7 @@ class SFS_CPT {
 			'show_ui'           => true,
 			'show_admin_column' => true,
 			'query_var'         => true,
-			'rewrite'           => array( 'slug' => 'sfs-category' ),
+			'rewrite'           => array( 'slug' => 'file-category' ),
 		);
 
 		register_taxonomy( 'sfs_category', array( 'sfs_file' ), $args );
@@ -100,7 +101,7 @@ class SFS_CPT {
 	public function add_meta_boxes() {
 		add_meta_box(
 			'sfs_file_details',
-			'File Sharing Details',
+			'Share Service Details',
 			array( $this, 'render_meta_box' ),
 			'sfs_file',
 			'normal',
@@ -116,18 +117,50 @@ class SFS_CPT {
 		$update_log = get_post_meta( $post->ID, '_sfs_update_log', true );
 		$has_password = get_post_meta( $post->ID, '_sfs_password', true ) ? ' (Password set)' : ' (Public)';
 		$download_count = get_post_meta( $post->ID, '_sfs_download_count', true ) ?: 0;
+		$download_limit = get_post_meta( $post->ID, '_sfs_download_limit', true );
+		$expiry_date = get_post_meta( $post->ID, '_sfs_expiry_date', true );
+		$allowed_roles = get_post_meta( $post->ID, '_sfs_allowed_roles', true ) ?: array();
+		$enable_notifications = get_post_meta( $post->ID, '_sfs_enable_notifications', true );
 
 		echo '<div style="background: #e7f7ff; padding: 15px; border: 1px solid #bce8f1; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">';
 		echo '<div><strong>Shortcode:</strong><br><code>[sgo_file_share id="' . intval( $post->ID ) . '"]</code></div>';
 		echo '<div style="text-align: right;"><span style="font-size: 0.9em; color: #666;">Total Downloads</span><br><strong style="font-size: 1.5em; color: #0073aa;">' . intval( $download_count ) . '</strong></div>';
 		echo '</div>';
 
-		echo '<p><label><strong>File Upload:</strong></label><br>';
-		echo '<input type="text" id="sfs_file_url" name="sfs_file_url" value="' . esc_attr( $file_url ) . '" style="width:80%;" /> ';
-		echo '<button type="button" class="button" id="sfs_upload_btn">Select File</button></p>';
-		
-		echo '<p><label><strong>Password:</strong>' . esc_html( $has_password ) . '</label><br>';
-		echo '<input type="password" name="sfs_password" value="" placeholder="Leave blank to keep current or make public" style="width:100%;" /></p>';
+		echo '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">';
+			echo '<div><label><strong>File Upload:</strong></label><br>';
+			echo '<input type="text" id="sfs_file_url" name="sfs_file_url" value="' . esc_attr( $file_url ) . '" style="width:70%;" /> ';
+			echo '<button type="button" class="button" id="sfs_upload_btn">Select</button></div>';
+			
+			echo '<div><label><strong>Password:</strong>' . esc_html( $has_password ) . '</label><br>';
+			echo '<input type="password" name="sfs_password" value="" placeholder="Leave blank to keep" style="width:100%;" /></div>';
+		echo '</div>';
+
+		echo '<div style="background: #fcfcfc; padding: 20px; border: 1px solid #eee; border-radius: 12px; margin-bottom: 20px;">';
+			echo '<h4 style="margin: 0 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #6c5ce7; display: flex; align-items: center; gap: 10px;"><span class="dashicons dashicons-star-filled"></span> PRO: Advanced Controls</h4>';
+			
+			echo '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 20px;">';
+				echo '<div><label><strong>Download Limit (Max):</strong></label><br>';
+				echo '<input type="number" name="sfs_download_limit" value="' . esc_attr( $download_limit ) . '" placeholder="0 = Unlimited" style="width:100%;" /></div>';
+				
+				echo '<div><label><strong>Expiration Date:</strong></label><br>';
+				echo '<input type="date" name="sfs_expiry_date" value="' . esc_attr( $expiry_date ) . '" style="width:100%;" /></div>';
+			echo '</div>';
+
+			echo '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">';
+				echo '<div><label><strong>Allowed User Roles:</strong> (Multiple)</label><br>';
+				echo '<div style="background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 5px; max-height: 120px; overflow-y: auto;">';
+				global $wp_roles;
+				foreach ( $wp_roles->role_names as $role_slug => $role_name ) {
+					$checked = in_array( $role_slug, $allowed_roles ) ? 'checked' : '';
+					echo '<label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="sfs_allowed_roles[]" value="' . esc_attr( $role_slug ) . '" ' . $checked . '> ' . esc_html( $role_name ) . '</label>';
+				}
+				echo '</div><p style="font-size: 0.85em; color: #666;">If none selected, role restriction is disabled.</p></div>';
+				
+				echo '<div><label><strong>Notifications:</strong></label><br>';
+				echo '<label style="display: block; margin-top: 10px;"><input type="checkbox" name="sfs_enable_notifications" value="yes" ' . checked( $enable_notifications, 'yes', false ) . '> Send email to Admin on each download</label></div>';
+			echo '</div>';
+		echo '</div>';
 
 		echo '<p><label><strong>Update Log:</strong></label><br>';
 		echo '<textarea name="sfs_update_log" style="width:100%; height:100px;">' . esc_textarea( $update_log ) . '</textarea></p>';
@@ -182,5 +215,23 @@ class SFS_CPT {
 			$hashed_password = wp_hash_password( $_POST['sfs_password'] );
 			update_post_meta( $post_id, '_sfs_password', $hashed_password );
 		}
+
+		// PRO: Download Limit
+		if ( isset( $_POST['sfs_download_limit'] ) ) {
+			update_post_meta( $post_id, '_sfs_download_limit', intval( $_POST['sfs_download_limit'] ) );
+		}
+
+		// PRO: Expiry Date
+		if ( isset( $_POST['sfs_expiry_date'] ) ) {
+			update_post_meta( $post_id, '_sfs_expiry_date', sanitize_text_field( $_POST['sfs_expiry_date'] ) );
+		}
+
+		// PRO: Allowed Roles
+		$roles = isset( $_POST['sfs_allowed_roles'] ) ? array_map( 'sanitize_text_field', $_POST['sfs_allowed_roles'] ) : array();
+		update_post_meta( $post_id, '_sfs_allowed_roles', $roles );
+
+		// PRO: Notifications
+		$notify = isset( $_POST['sfs_enable_notifications'] ) ? 'yes' : 'no';
+		update_post_meta( $post_id, '_sfs_enable_notifications', $notify );
 	}
 }

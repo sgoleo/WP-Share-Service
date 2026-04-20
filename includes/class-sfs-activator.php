@@ -2,38 +2,47 @@
 
 class SFS_Activator {
 
-	/**
-	 * Activation hook callback
-	 */
 	public static function activate() {
-		self::create_secure_directory();
-	}
-
-	/**
-	 * Create the secure files directory and add .htaccess
-	 */
-	private static function create_secure_directory() {
+		// Create the secure files directory and add .htaccess
 		$upload_dir = wp_upload_dir();
 		$secure_dir = $upload_dir['basedir'] . '/secure_files';
 
 		if ( ! file_exists( $secure_dir ) ) {
 			if ( ! wp_mkdir_p( $secure_dir ) ) {
 				error_log( 'SFS Error: Could not create secure files directory at ' . $secure_dir );
-				return;
 			}
 		}
 
-		// Create .htaccess to block direct access
+		// Protect the directory with .htaccess (Apache)
 		$htaccess_file = $secure_dir . '/.htaccess';
 		if ( ! file_exists( $htaccess_file ) ) {
-			$content = "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order deny,allow\n    Deny from all\n</IfModule>";
-			file_put_contents( $htaccess_file, $content );
+			$htaccess_content = "Order Deny,Allow\nDeny from all";
+			file_put_contents( $htaccess_file, $htaccess_content );
 		}
 
-		// Create index.php to prevent directory listing
-		$index_file = $secure_dir . '/index.php';
-		if ( ! file_exists( $index_file ) ) {
-			file_put_contents( $index_file, "<?php // Silence is golden" );
-		}
+		// Create PRO Log Table
+		self::create_log_table();
+	}
+
+	private static function create_log_table() {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'sfs_logs';
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$sql = "CREATE TABLE $table_name (
+			id bigint(20) NOT NULL AUTO_INCREMENT,
+			file_id bigint(20) NOT NULL,
+			user_id bigint(20) DEFAULT 0,
+			user_status varchar(20) DEFAULT 'guest',
+			ip_address varchar(45) NOT NULL,
+			country varchar(100) DEFAULT 'Unknown',
+			user_agent text,
+			timestamp datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY file_id (file_id)
+		) $charset_collate;";
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		dbDelta( $sql );
 	}
 }
