@@ -1,6 +1,12 @@
 <?php
 
-class SFS_Settings {
+namespace SGOplus\WP_Share;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class Settings {
 
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
@@ -11,8 +17,8 @@ class SFS_Settings {
 		// Main Settings
 		add_submenu_page(
 			'edit.php?post_type=sfs_file',
-			'Settings',
-			'Settings',
+			esc_html__( 'Settings', 'sgoplus-wp-share' ),
+			esc_html__( 'Settings', 'sgoplus-wp-share' ),
 			'manage_options',
 			'sfs-settings',
 			array( $this, 'render_settings_page' )
@@ -22,8 +28,8 @@ class SFS_Settings {
 		if ( is_sfs_pro_active() ) {
 			add_submenu_page(
 				'edit.php?post_type=sfs_file',
-				'PRO Log',
-				'PRO Log',
+				esc_html__( 'PRO Log', 'sgoplus-wp-share' ),
+				esc_html__( 'PRO Log', 'sgoplus-wp-share' ),
 				'manage_options',
 				'sfs-pro-log',
 				array( $this, 'render_pro_log_page' )
@@ -32,8 +38,13 @@ class SFS_Settings {
 	}
 
 	public function register_settings() {
-		register_setting( 'sfs_settings_group', 'sfs_acceleration_mode' );
-		register_setting( 'sfs_settings_group', 'sfs_license_key', array( $this, 'validate_license' ) );
+		register_setting( 'sfs_settings_group', 'sfs_acceleration_mode', array(
+			'sanitize_callback' => 'sanitize_text_field',
+			'default'           => 'standard',
+		) );
+		register_setting( 'sfs_settings_group', 'sfs_license_key', array(
+			'sanitize_callback' => array( $this, 'validate_license' ),
+		) );
 	}
 
 	/**
@@ -52,7 +63,6 @@ class SFS_Settings {
 		}
 
 		// Optimization: If the key hasn't changed and it's already validated, skip the remote request.
-		// This prevents the "License Inactive" flicker or accidental resets when saving other settings.
 		if ( $key === $old_key && $is_currently_valid ) {
 			return $key;
 		}
@@ -72,7 +82,7 @@ class SFS_Settings {
 		$response = wp_remote_get( $query_url, array( 'timeout' => 20 ) );
 
 		if ( is_wp_error( $response ) ) {
-			add_settings_error( 'sfs_license_key', 'api_error', 'Connection error: ' . $response->get_error_message() . '. Please try again in 3 seconds.' );
+			add_settings_error( 'sfs_license_key', 'api_error', sprintf( esc_html__( 'Connection error: %s. Please try again in 3 seconds.', 'sgoplus-wp-share' ), $response->get_error_message() ) );
 			return $old_key; // Revert to old key to maintain state
 		}
 
@@ -89,8 +99,8 @@ class SFS_Settings {
 		) );
 
 		if ( ! $is_valid ) {
-			$error_msg = isset( $data['message'] ) ? $data['message'] : 'Invalid License Key.';
-			add_settings_error( 'sfs_license_key', 'invalid_key', $error_msg . ' Please wait 3 seconds before trying again.' );
+			$error_msg = isset( $data['message'] ) ? $data['message'] : esc_html__( 'Invalid License Key.', 'sgoplus-wp-share' );
+			add_settings_error( 'sfs_license_key', 'invalid_key', $error_msg . ' ' . esc_html__( 'Please wait 3 seconds before trying again.', 'sgoplus-wp-share' ) );
 		}
 
 		return $key;
@@ -100,7 +110,7 @@ class SFS_Settings {
 		$is_pro = is_sfs_pro_active();
 		?>
 		<div class="wrap sfs-settings-wrap" style="max-width: 1200px;">
-			<h1 style="margin-bottom: 20px;">SGOplus WP Share Settings</h1>
+			<h1 style="margin-bottom: 20px;"><?php esc_html_e( 'SGOplus WP Share Settings', 'sgoplus-wp-share' ); ?></h1>
 			
 			<div style="display: flex; gap: 20px; align-items: flex-start;">
 				<!-- Main Content -->
@@ -115,21 +125,21 @@ class SFS_Settings {
 						<div class="card" style="margin: 0 0 20px 0; padding: 25px; border-radius: 12px; border: 1px solid <?php echo $is_pro ? '#d4edda' : '#e5e5e5'; ?>; box-shadow: 0 2px 4px rgba(0,0,0,0.02); max-width: none; width: 100%; box-sizing: border-box; background: <?php echo $is_pro ? '#fafffa' : '#fff'; ?>;">
 							<h2 style="margin-top: 0; font-size: 1.3em; display: flex; align-items: center; gap: 10px;">
 								<span class="dashicons dashicons-shield-alt" style="color: <?php echo $is_pro ? '#28a745' : '#0073aa'; ?>;"></span> 
-								PRO License Management
+								<?php esc_html_e( 'PRO License Management', 'sgoplus-wp-share' ); ?>
 							</h2>
-							<p style="color: #666; margin-bottom: 20px;">Enter your License Key to unlock all PRO features and premium support.</p>
+							<p style="color: #666; margin-bottom: 20px;"><?php esc_html_e( 'Enter your License Key to unlock all PRO features and premium support.', 'sgoplus-wp-share' ); ?></p>
 							
 							<table class="form-table" style="margin-top: 0;">
 								<tr>
-									<th scope="row" style="width: 200px; padding: 15px 0;">License Key</th>
+									<th scope="row" style="width: 200px; padding: 15px 0;"><?php esc_html_e( 'License Key', 'sgoplus-wp-share' ); ?></th>
 									<td>
 										<input type="text" name="sfs_license_key" value="<?php echo esc_attr( get_option( 'sfs_license_key' ) ); ?>" class="regular-text" style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;" placeholder="SFS-XXXX-XXXX-XXXX" />
 										<?php if ( $is_pro ) : ?>
 											<p style="color: #28a745; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px;">
-												<span class="dashicons dashicons-yes-alt"></span> PRO License is Active
+												<span class="dashicons dashicons-yes-alt"></span> <?php esc_html_e( 'PRO License is Active', 'sgoplus-wp-share' ); ?>
 											</p>
 										<?php else : ?>
-											<p style="color: #d63031; font-weight: 600; margin-top: 8px;">License Inactive. Please activate to use PRO functions.</p>
+											<p style="color: #d63031; font-weight: 600; margin-top: 8px;"><?php esc_html_e( 'License Inactive. Please activate to use PRO functions.', 'sgoplus-wp-share' ); ?></p>
 										<?php endif; ?>
 									</td>
 								</tr>
@@ -141,34 +151,34 @@ class SFS_Settings {
 							<?php if ( ! $is_pro ) : ?>
 								<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 10; border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
 									<div style="background: #fff; padding: 15px 25px; border-radius: 10px; border: 1px solid #e5e5e5; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center;">
-										<p style="margin: 0 0 10px 0; font-weight: 700; color: #1d2327;">PRO Feature Locked</p>
-										<p style="margin: 0; font-size: 0.9em; color: #666;">Please activate your license to enable acceleration.</p>
+										<p style="margin: 0 0 10px 0; font-weight: 700; color: #1d2327;"><?php esc_html_e( 'PRO Feature Locked', 'sgoplus-wp-share' ); ?></p>
+										<p style="margin: 0; font-size: 0.9em; color: #666;"><?php esc_html_e( 'Please activate your license to enable acceleration.', 'sgoplus-wp-share' ); ?></p>
 									</div>
 								</div>
 							<?php endif; ?>
 
 							<h2 style="margin-top: 0; font-size: 1.3em; display: flex; align-items: center; gap: 10px;">
 								<span class="dashicons dashicons-performance" style="color: #0073aa;"></span> 
-								Performance Optimization
+								<?php esc_html_e( 'Performance Optimization', 'sgoplus-wp-share' ); ?>
 							</h2>
-							<p style="color: #666; margin-bottom: 20px;">Optimize how your server handles file streams to maximize download speed and reduce CPU usage.</p>
+							<p style="color: #666; margin-bottom: 20px;"><?php esc_html_e( 'Optimize how your server handles file streams to maximize download speed and reduce CPU usage.', 'sgoplus-wp-share' ); ?></p>
 							
 							<table class="form-table" style="margin-top: 0;">
 								<tr>
-									<th scope="row" style="width: 200px; padding: 15px 0;">Acceleration Mode</th>
+									<th scope="row" style="width: 200px; padding: 15px 0;"><?php esc_html_e( 'Acceleration Mode', 'sgoplus-wp-share' ); ?></th>
 									<td>
 										<?php 
 										$mode = get_option( 'sfs_acceleration_mode', 'standard' ); 
 										if ( ! $is_pro ) $mode = 'standard'; 
 										?>
 										<select name="sfs_acceleration_mode" <?php echo ! $is_pro ? 'disabled' : ''; ?> style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;">
-											<option value="standard" <?php selected( $mode, 'standard' ); ?>>Standard (PHP Chunked - Universal)</option>
-											<option value="x_sendfile" <?php selected( $mode, 'x_sendfile' ); ?>>X-Sendfile (Apache)</option>
-											<option value="x_accel" <?php selected( $mode, 'x_accel' ); ?>>X-Accel-Redirect (Nginx)</option>
-											<option value="x_litespeed" <?php selected( $mode, 'x_litespeed' ); ?>>X-LiteSpeed-Location (LiteSpeed / OpenLiteSpeed)</option>
+											<option value="standard" <?php selected( $mode, 'standard' ); ?>><?php esc_html_e( 'Standard (PHP Chunked - Universal)', 'sgoplus-wp-share' ); ?></option>
+											<option value="x_sendfile" <?php selected( $mode, 'x_sendfile' ); ?>><?php esc_html_e( 'X-Sendfile (Apache)', 'sgoplus-wp-share' ); ?></option>
+											<option value="x_accel" <?php selected( $mode, 'x_accel' ); ?>><?php esc_html_e( 'X-Accel-Redirect (Nginx)', 'sgoplus-wp-share' ); ?></option>
+											<option value="x_litespeed" <?php selected( $mode, 'x_litespeed' ); ?>><?php esc_html_e( 'X-LiteSpeed-Location (LiteSpeed / OpenLiteSpeed)', 'sgoplus-wp-share' ); ?></option>
 										</select>
 										<div style="margin-top: 10px; padding: 12px; background: #fff8e1; border-left: 4px solid #ffc107; font-size: 0.9em; border-radius: 4px;">
-											<strong>Notice:</strong> Specialized modes require server-side configuration. If downloads fail (0 bytes or 404), please revert to <strong>Standard</strong> mode.
+											<strong><?php esc_html_e( 'Notice:', 'sgoplus-wp-share' ); ?></strong> <?php esc_html_e( 'Specialized modes require server-side configuration. If downloads fail (0 bytes or 404), please revert to Standard mode.', 'sgoplus-wp-share' ); ?>
 										</div>
 									</td>
 								</tr>
@@ -180,11 +190,11 @@ class SFS_Settings {
 							<div class="card" style="margin: 0; padding: 25px; border-radius: 12px; border: 1px solid #d1d1d1; background: linear-gradient(135deg, #f8f7ff 0%, #ffffff 100%); border-left: 5px solid #6c5ce7; box-shadow: 0 4px 12px rgba(108, 92, 231, 0.05); max-width: none; width: 100%; box-sizing: border-box;">
 								<div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;">
 									<div style="flex: 1;">
-										<h2 style="color: #6c5ce7; margin-top: 0; font-size: 1.3em;">Unlock PRO Features</h2>
-										<p style="margin-bottom: 0; color: #444;">Upgrade to unlock advanced download analytics, role-based access control, and automated notifications.</p>
+										<h2 style="color: #6c5ce7; margin-top: 0; font-size: 1.3em;"><?php esc_html_e( 'Unlock PRO Features', 'sgoplus-wp-share' ); ?></h2>
+										<p style="margin-bottom: 0; color: #444;"><?php esc_html_e( 'Upgrade to unlock advanced download analytics, role-based access control, and automated notifications.', 'sgoplus-wp-share' ); ?></p>
 									</div>
 									<div style="text-align: right;">
-										<a href="https://sgoplus.one/wp-share-service/" target="_blank" class="button button-primary" style="background: #6c5ce7; border-color: #6c5ce7; padding: 10px 25px; height: auto; font-weight: 600; border-radius: 8px; font-size: 1.1em; transition: all 0.2s;">Get PRO Version</a>
+										<a href="https://sgoplus.one/wp-share-service/" target="_blank" class="button button-primary" style="background: #6c5ce7; border-color: #6c5ce7; padding: 10px 25px; height: auto; font-weight: 600; border-radius: 8px; font-size: 1.1em; transition: all 0.2s;"><?php esc_html_e( 'Get PRO Version', 'sgoplus-wp-share' ); ?></a>
 									</div>
 								</div>
 							</div>
@@ -223,7 +233,7 @@ class SFS_Settings {
 						<hr style="margin: 25px 0; border: 0; border-top: 1px solid #f0f0f1;">
 						
 						<div style="font-size: 0.85em; color: #999;">
-							<p style="margin: 0;">SGOplus WP Share Pro <strong>v1.8.5</strong></p>
+							<p style="margin: 0;">SGOplus WP Share <strong>v1.0.0</strong></p>
 							<p style="margin: 5px 0 0 0;">© 2026 SGOplus</p>
 						</div>
 					</div>
@@ -248,13 +258,13 @@ class SFS_Settings {
 		
 		// Re-check PRO status inside the page just in case
 		if ( ! is_sfs_pro_active() ) {
-			wp_die( 'This page is only available in the PRO version. Please activate your license.' );
+			wp_die( esc_html__( 'This page is only available in the PRO version. Please activate your license.', 'sgoplus-wp-share' ) );
 		}
 
 		// Handle Clear Logs
 		if ( isset( $_POST['sfs_clear_logs'] ) && check_admin_referer( 'sfs_clear_logs_nonce' ) ) {
 			$wpdb->query( "TRUNCATE TABLE $table_name" );
-			echo '<div class="updated"><p>Logs cleared successfully.</p></div>';
+			echo '<div class="updated"><p>' . esc_html__( 'Logs cleared successfully.', 'sgoplus-wp-share' ) . '</p></div>';
 		}
 
 		$pagenum = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
@@ -269,25 +279,25 @@ class SFS_Settings {
 		<div class="wrap">
 			<h1 style="display: flex; align-items: center; gap: 10px;">
 				<span class="dashicons dashicons-list-view" style="font-size: 1.2em; width: auto; height: auto;"></span> 
-				PRO Download Logs
+				<?php esc_html_e( 'PRO Download Logs', 'sgoplus-wp-share' ); ?>
 			</h1>
-			<p>Track every download event with detailed user information.</p>
+			<p><?php esc_html_e( 'Track every download event with detailed user information.', 'sgoplus-wp-share' ); ?></p>
 
 			<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
-				<form method="post" onsubmit="return confirm('Are you sure you want to clear all logs?');">
+				<form method="post" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to clear all logs?', 'sgoplus-wp-share' ) ); ?>');">
 					<?php wp_nonce_field( 'sfs_clear_logs_nonce' ); ?>
-					<input type="submit" name="sfs_clear_logs" class="button button-secondary" value="Clear All Logs" />
+					<input type="submit" name="sfs_clear_logs" class="button button-secondary" value="<?php echo esc_attr__( 'Clear All Logs', 'sgoplus-wp-share' ); ?>" />
 				</form>
 				
 				<?php if ( $num_pages > 1 ) : ?>
 					<div class="tablenav-pages">
-						<span class="displaying-num"><?php echo intval( $total_logs ); ?> items</span>
+						<span class="displaying-num"><?php echo sprintf( esc_html__( '%d items', 'sgoplus-wp-share' ), intval( $total_logs ) ); ?></span>
 						<?php
 						echo paginate_links( array(
 							'base'      => add_query_arg( 'paged', '%#%' ),
 							'format'    => '',
-							'prev_text' => __( '&laquo;' ),
-							'next_text' => __( '&raquo;' ),
+							'prev_text' => esc_html__( '&laquo;', 'sgoplus-wp-share' ),
+							'next_text' => esc_html__( '&raquo;', 'sgoplus-wp-share' ),
 							'total'     => $num_pages,
 							'current'   => $pagenum,
 						) );
@@ -299,13 +309,13 @@ class SFS_Settings {
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
-						<th style="width: 15%;">Time</th>
-						<th style="width: 20%;">File</th>
-						<th style="width: 15%;">User</th>
-						<th style="width: 10%;">Status</th>
-						<th style="width: 15%;">IP Address</th>
-						<th style="width: 10%;">Country</th>
-						<th>User Agent</th>
+						<th style="width: 15%;"><?php esc_html_e( 'Time', 'sgoplus-wp-share' ); ?></th>
+						<th style="width: 20%;"><?php esc_html_e( 'File', 'sgoplus-wp-share' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'User', 'sgoplus-wp-share' ); ?></th>
+						<th style="width: 10%;"><?php esc_html_e( 'Status', 'sgoplus-wp-share' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'IP Address', 'sgoplus-wp-share' ); ?></th>
+						<th style="width: 10%;"><?php esc_html_e( 'Country', 'sgoplus-wp-share' ); ?></th>
+						<th><?php esc_html_e( 'User Agent', 'sgoplus-wp-share' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -331,7 +341,7 @@ class SFS_Settings {
 						<?php endforeach; ?>
 					<?php else : ?>
 						<tr>
-							<td colspan="7" style="text-align: center; padding: 40px;">No download records found yet.</td>
+							<td colspan="7" style="text-align: center; padding: 40px;"><?php esc_html_e( 'No download records found yet.', 'sgoplus-wp-share' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>

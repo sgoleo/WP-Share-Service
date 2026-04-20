@@ -1,11 +1,20 @@
 <?php
 /**
  * Plugin Name: SGOplus WP Share
- * Description: A secure plugin for sharing password-protected files.
- * Version: 1.8.5
- * Author: sgoleo, sgoplus.one
- * License: GPL-2.0+
+ * Description: A secure plugin for sharing password-protected files with advanced performance optimization.
+ * Version: 1.0.0
+ * Author: SGOplus
+ * Author URI: https://sgoplus.one
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Requires at least: 6.5
+ * Tested up to: 6.9
+ * Requires PHP: 7.4
+ * Stable tag: 1.0.0
+ * Text Domain: sgoplus-wp-share
  */
+
+namespace SGOplus\WP_Share;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -34,23 +43,23 @@ function is_sfs_pro_active() {
 /**
  * Activation Logic
  */
-register_activation_hook( __FILE__, array( 'SFS_Activator', 'activate' ) );
+register_activation_hook( __FILE__, array( __NAMESPACE__ . '\\Activator', 'activate' ) );
 
 /**
  * Initialization
  */
-function sfs_init() {
+function init() {
 	// Initialize CPT
-	$cpt = new SFS_CPT();
+	$cpt = new CPT();
 	$cpt->register_post_type();
 	
 	// Initialize Shortcodes
-	new SFS_Shortcode();
+	new Shortcode();
 	
 	// Initialize Downloader
-	new SFS_Downloader();
+	new Downloader();
 
 	// Initialize Settings
-	new SFS_Settings();
+	new Settings();
 }
-add_action( 'init', 'sfs_init' );
+add_action( 'init', __NAMESPACE__ . '\\init' );

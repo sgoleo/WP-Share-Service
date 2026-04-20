@@ -1,6 +1,12 @@
 <?php
 
-class SFS_Downloader {
+namespace SGOplus\WP_Share;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class Downloader {
 
 	public function __construct() {
 		// Use a slightly later hook to ensure all headers are ready
@@ -12,21 +18,26 @@ class SFS_Downloader {
 			return;
 		}
 
+		// Verify Nonce for security
+		if ( ! isset( $_POST['sfs_download_nonce'] ) || ! wp_verify_nonce( $_POST['sfs_download_nonce'], 'sfs_download_file' ) ) {
+			wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'sgoplus-wp-share' ) );
+		}
+
 		$post_id = isset( $_POST['sfs_id'] ) ? intval( $_POST['sfs_id'] ) : 0;
 		if ( ! $post_id ) {
-			wp_die( 'Invalid File ID.' );
+			wp_die( esc_html__( 'Invalid File ID.', 'sgoplus-wp-share' ) );
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post || $post->post_type !== 'sfs_file' ) {
-			wp_die( 'File not found.' );
+			wp_die( esc_html__( 'File not found.', 'sgoplus-wp-share' ) );
 		}
 
 		// Check Role Access (PRO)
 		$allowed_roles = get_post_meta( $post_id, '_sfs_allowed_roles', true );
 		if ( ! empty( $allowed_roles ) && is_array( $allowed_roles ) ) {
 			if ( ! is_user_logged_in() ) {
-				wp_die( 'Error: This file is restricted to members only. Please log in first.' );
+				wp_die( esc_html__( 'Error: This file is restricted to members only. Please log in first.', 'sgoplus-wp-share' ) );
 			}
 			$user = wp_get_current_user();
 			$user_roles = (array) $user->roles;
@@ -38,7 +49,7 @@ class SFS_Downloader {
 				}
 			}
 			if ( ! $has_access && ! current_user_can( 'administrator' ) ) {
-				wp_die( 'Error: You do not have the required role to download this file.' );
+				wp_die( esc_html__( 'Error: You do not have the required role to download this file.', 'sgoplus-wp-share' ) );
 			}
 		}
 
@@ -47,7 +58,7 @@ class SFS_Downloader {
 		if ( ! empty( $expiry_date ) ) {
 			$today = date( 'Y-m-d' );
 			if ( $today > $expiry_date ) {
-				wp_die( 'Error: This download link has expired.' );
+				wp_die( esc_html__( 'Error: This download link has expired.', 'sgoplus-wp-share' ) );
 			}
 		}
 
@@ -56,28 +67,28 @@ class SFS_Downloader {
 		$current_count = get_post_meta( $post_id, '_sfs_download_count', true ) ?: 0;
 		if ( ! empty( $download_limit ) && intval( $download_limit ) > 0 ) {
 			if ( intval( $current_count ) >= intval( $download_limit ) ) {
-				wp_die( 'Error: Download limit reached for this file.' );
+				wp_die( esc_html__( 'Error: Download limit reached for this file.', 'sgoplus-wp-share' ) );
 			}
 		}
 
 		// Verify Password
 		$hashed_password = get_post_meta( $post_id, '_sfs_password', true );
 		if ( ! empty( $hashed_password ) ) {
-			$submitted_password = isset( $_POST['sfs_password'] ) ? $_POST['sfs_password'] : '';
+			$submitted_password = isset( $_POST['sfs_password'] ) ? sanitize_text_field( $_POST['sfs_password'] ) : '';
 			if ( ! wp_check_password( $submitted_password, $hashed_password ) ) {
-				wp_die( 'Incorrect password. Please try again.' );
+				wp_die( esc_html__( 'Incorrect password. Please try again.', 'sgoplus-wp-share' ) );
 			}
 		}
 
 		// Get File Info
 		$file_url = get_post_meta( $post_id, '_sfs_file_url', true );
 		if ( ! $file_url ) {
-			wp_die( 'No file associated with this record.' );
+			wp_die( esc_html__( 'No file associated with this record.', 'sgoplus-wp-share' ) );
 		}
 
 		$file_path = $this->url_to_path( $file_url );
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			wp_die( 'Error: The requested file could not be found on the server. Path: ' . esc_html($file_path) );
+			wp_die( esc_html__( 'Error: The requested file could not be found on the server.', 'sgoplus-wp-share' ) );
 		}
 
 		// --- PRO Logic Start ---
@@ -89,9 +100,10 @@ class SFS_Downloader {
 		$enable_notifications = get_post_meta( $post_id, '_sfs_enable_notifications', true );
 		if ( $enable_notifications === 'yes' ) {
 			$to = get_option( 'admin_email' );
-			$subject = '[Share Service] New Download: ' . get_the_title( $post_id );
+			$subject = '[SGOplus WP Share] New Download: ' . get_the_title( $post_id );
 			$user_info = is_user_logged_in() ? wp_get_current_user()->display_name : 'Guest';
-			$message = "File: " . get_the_title( $post_id ) . "\nBy: " . $user_info . "\nIP: " . $_SERVER['REMOTE_ADDR'] . "\nTime: " . current_time( 'mysql' );
+			$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : 'Unknown';
+			$message = "File: " . get_the_title( $post_id ) . "\nBy: " . $user_info . "\nIP: " . $ip_address . "\nTime: " . current_time( 'mysql' );
 			wp_mail( $to, $subject, $message );
 		}
 
@@ -117,6 +129,21 @@ class SFS_Downloader {
 			$accel_mode = 'standard';
 		}
 
+		// Server Detection for Compatibility
+		$server_soft = isset( $_SERVER['SERVER_SOFTWARE'] ) ? $_SERVER['SERVER_SOFTWARE'] : '';
+		$is_apache = ( stripos( $server_soft, 'apache' ) !== false );
+		$is_nginx  = ( stripos( $server_soft, 'nginx' ) !== false );
+		$is_litespeed = ( stripos( $server_soft, 'litespeed' ) !== false );
+
+		// Auto-fallback if server doesn't match selected mode
+		if ( $accel_mode === 'x_sendfile' && ! $is_apache && ! $is_litespeed ) {
+			$accel_mode = 'standard';
+		} elseif ( $accel_mode === 'x_accel' && ! $is_nginx ) {
+			$accel_mode = 'standard';
+		} elseif ( $accel_mode === 'x_litespeed' && ! $is_litespeed ) {
+			$accel_mode = 'standard';
+		}
+
 		header( 'Content-Description: File Transfer' );
 		header( 'Content-Type: ' . $mime_type );
 		header( 'Content-Disposition: attachment; filename="' . $file_name . '"' );
@@ -125,14 +152,10 @@ class SFS_Downloader {
 		header( 'Pragma: public' );
 
 		if ( $accel_mode === 'x_sendfile' ) {
-			// Apache / LiteSpeed
 			header( 'X-Sendfile: ' . $file_path );
 			exit;
 		} elseif ( $accel_mode === 'x_accel' || $accel_mode === 'x_litespeed' ) {
-			// Nginx or LiteSpeed
-			// Both use a relative URI path from the web root
 			$relative_path = str_replace( trailingslashit( str_replace( '\\', '/', ABSPATH ) ), '/', str_replace( '\\', '/', $file_path ) );
-			
 			if ( $accel_mode === 'x_litespeed' ) {
 				header( 'X-LiteSpeed-Location: ' . $relative_path );
 			} else {
@@ -141,13 +164,13 @@ class SFS_Downloader {
 			exit;
 		}
 
-		// Fallback: Standard PHP Chunked
+		// Fallback: Standard PHP Streaming
 		header( 'Content-Length: ' . $file_size );
-		set_time_limit(0); 
+		set_time_limit( 0 );
 		$handle = fopen( $file_path, 'rb' );
 		if ( $handle ) {
 			while ( ! feof( $handle ) ) {
-				echo fread( $handle, 1024 * 1024 ); 
+				echo fread( $handle, 1024 * 1024 );
 				ob_flush();
 				flush();
 			}
@@ -162,12 +185,13 @@ class SFS_Downloader {
 		
 		$user_id = get_current_user_id();
 		$user_status = is_user_logged_in() ? 'member' : 'guest';
-		$ip_address = $_SERVER['REMOTE_ADDR'];
+		$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : 'Unknown';
+		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ) : 'Unknown';
 		
-		// Basic Country Detection (Mocked or simple header check)
+		// Basic Country Detection
 		$country = 'Unknown';
 		if ( isset( $_SERVER['HTTP_CF_IPCOUNTRY'] ) ) { // Cloudflare
-			$country = $_SERVER['HTTP_CF_IPCOUNTRY'];
+			$country = sanitize_text_field( $_SERVER['HTTP_CF_IPCOUNTRY'] );
 		}
 
 		$wpdb->insert(
@@ -178,7 +202,7 @@ class SFS_Downloader {
 				'user_status' => $user_status,
 				'ip_address'  => $ip_address,
 				'country'     => $country,
-				'user_agent'  => $_SERVER['HTTP_USER_AGENT'],
+				'user_agent'  => $user_agent,
 				'timestamp'   => current_time( 'mysql' ),
 			)
 		);
