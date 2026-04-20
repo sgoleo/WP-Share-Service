@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: WP Share Service
+ * Plugin Name: SGOplus WP Share
  * Description: A secure plugin for sharing password-protected files.
- * Version: 1.0.0
+ * Version: 1.8.5
  * Author: sgoleo, sgoplus.one
  * License: GPL-2.0+
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'SFS_VERSION', '1.0.0' );
+define( 'SFS_VERSION', '1.8.5' );
 define( 'SFS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SFS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -22,6 +22,14 @@ require_once SFS_PATH . 'includes/class-sfs-cpt.php';
 require_once SFS_PATH . 'includes/class-sfs-shortcode.php';
 require_once SFS_PATH . 'includes/class-sfs-downloader.php';
 require_once SFS_PATH . 'includes/class-sfs-settings.php';
+
+/**
+ * Global Helper: Check if PRO license is active
+ */
+function is_sfs_pro_active() {
+	$license_status = get_option( 'sfs_license_status' );
+	return ( isset( $license_status['isValid'] ) && $license_status['isValid'] === true );
+}
 
 /**
  * Activation Logic

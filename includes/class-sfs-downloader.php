@@ -111,8 +111,11 @@ class SFS_Downloader {
 		$file_size = filesize( $file_path );
 		$mime_type = wp_check_filetype( $file_name )['type'] ?: 'application/octet-stream';
 
-		// Acceleration Optimization
+		// Acceleration Optimization (Gated by PRO License)
 		$accel_mode = get_option( 'sfs_acceleration_mode', 'standard' );
+		if ( ! is_sfs_pro_active() ) {
+			$accel_mode = 'standard';
+		}
 
 		header( 'Content-Description: File Transfer' );
 		header( 'Content-Type: ' . $mime_type );

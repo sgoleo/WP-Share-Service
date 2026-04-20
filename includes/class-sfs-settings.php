@@ -18,25 +18,89 @@ class SFS_Settings {
 			array( $this, 'render_settings_page' )
 		);
 
-		// PRO Log Submenu
-		add_submenu_page(
-			'edit.php?post_type=sfs_file',
-			'PRO Log',
-			'PRO Log',
-			'manage_options',
-			'sfs-pro-log',
-			array( $this, 'render_pro_log_page' )
-		);
+		// PRO Log Submenu (Only if PRO is active)
+		if ( is_sfs_pro_active() ) {
+			add_submenu_page(
+				'edit.php?post_type=sfs_file',
+				'PRO Log',
+				'PRO Log',
+				'manage_options',
+				'sfs-pro-log',
+				array( $this, 'render_pro_log_page' )
+			);
+		}
 	}
 
 	public function register_settings() {
 		register_setting( 'sfs_settings_group', 'sfs_acceleration_mode' );
+		register_setting( 'sfs_settings_group', 'sfs_license_key', array( $this, 'validate_license' ) );
+	}
+
+	/**
+	 * Validate License Key via Software License Manager (SLM) API
+	 */
+	public function validate_license( $key ) {
+		$key = sanitize_text_field( $key );
+		$old_key = get_option( 'sfs_license_key' );
+		$license_status = get_option( 'sfs_license_status' );
+		$is_currently_valid = ( isset( $license_status['isValid'] ) && $license_status['isValid'] === true );
+		
+		// If key is empty, reset status
+		if ( empty( $key ) ) {
+			update_option( 'sfs_license_status', array( 'isValid' => false ) );
+			return $key;
+		}
+
+		// Optimization: If the key hasn't changed and it's already validated, skip the remote request.
+		// This prevents the "License Inactive" flicker or accidental resets when saving other settings.
+		if ( $key === $old_key && $is_currently_valid ) {
+			return $key;
+		}
+
+		// SLM API Config
+		$api_url    = 'https://virduct.com';
+		$secret_key = '69e5d4eb0cf195.93364420';
+		
+		// Build URL for wp_remote_get
+		$query_url = add_query_arg( array(
+			'slm_action'        => 'slm_activate',
+			'secret_key'        => $secret_key,
+			'license_key'       => $key,
+			'registered_domain' => home_url(),
+		), $api_url );
+
+		$response = wp_remote_get( $query_url, array( 'timeout' => 20 ) );
+
+		if ( is_wp_error( $response ) ) {
+			add_settings_error( 'sfs_license_key', 'api_error', 'Connection error: ' . $response->get_error_message() . '. Please try again in 3 seconds.' );
+			return $old_key; // Revert to old key to maintain state
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		// SLM returns result: 'success' or 'error'
+		$is_valid = ( isset( $data['result'] ) && $data['result'] === 'success' );
+
+		update_option( 'sfs_license_status', array(
+			'isValid'     => $is_valid,
+			'lastChecked' => current_time( 'mysql' ),
+			'message'     => isset( $data['message'] ) ? $data['message'] : ''
+		) );
+
+		if ( ! $is_valid ) {
+			$error_msg = isset( $data['message'] ) ? $data['message'] : 'Invalid License Key.';
+			add_settings_error( 'sfs_license_key', 'invalid_key', $error_msg . ' Please wait 3 seconds before trying again.' );
+		}
+
+		return $key;
 	}
 
 	public function render_settings_page() {
+		$is_pro = is_sfs_pro_active();
 		?>
 		<div class="wrap sfs-settings-wrap" style="max-width: 1200px;">
-			<h1 style="margin-bottom: 20px;">WP Share Service Settings</h1>
+			<h1 style="margin-bottom: 20px;">SGOplus WP Share Settings</h1>
 			
 			<div style="display: flex; gap: 20px; align-items: flex-start;">
 				<!-- Main Content -->
@@ -47,7 +111,42 @@ class SFS_Settings {
 						do_settings_sections( 'sfs_settings_group' );
 						?>
 						
-						<div class="card" style="margin: 0 0 20px 0; padding: 25px; border-radius: 12px; border: 1px solid #e5e5e5; box-shadow: 0 2px 4px rgba(0,0,0,0.02); max-width: none; width: 100%; box-sizing: border-box;">
+						<!-- License Card -->
+						<div class="card" style="margin: 0 0 20px 0; padding: 25px; border-radius: 12px; border: 1px solid <?php echo $is_pro ? '#d4edda' : '#e5e5e5'; ?>; box-shadow: 0 2px 4px rgba(0,0,0,0.02); max-width: none; width: 100%; box-sizing: border-box; background: <?php echo $is_pro ? '#fafffa' : '#fff'; ?>;">
+							<h2 style="margin-top: 0; font-size: 1.3em; display: flex; align-items: center; gap: 10px;">
+								<span class="dashicons dashicons-shield-alt" style="color: <?php echo $is_pro ? '#28a745' : '#0073aa'; ?>;"></span> 
+								PRO License Management
+							</h2>
+							<p style="color: #666; margin-bottom: 20px;">Enter your License Key to unlock all PRO features and premium support.</p>
+							
+							<table class="form-table" style="margin-top: 0;">
+								<tr>
+									<th scope="row" style="width: 200px; padding: 15px 0;">License Key</th>
+									<td>
+										<input type="text" name="sfs_license_key" value="<?php echo esc_attr( get_option( 'sfs_license_key' ) ); ?>" class="regular-text" style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;" placeholder="SFS-XXXX-XXXX-XXXX" />
+										<?php if ( $is_pro ) : ?>
+											<p style="color: #28a745; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px;">
+												<span class="dashicons dashicons-yes-alt"></span> PRO License is Active
+											</p>
+										<?php else : ?>
+											<p style="color: #d63031; font-weight: 600; margin-top: 8px;">License Inactive. Please activate to use PRO functions.</p>
+										<?php endif; ?>
+									</td>
+								</tr>
+							</table>
+						</div>
+
+						<!-- Performance Optimization Card -->
+						<div class="card" style="margin: 0 0 20px 0; padding: 25px; border-radius: 12px; border: 1px solid #e5e5e5; box-shadow: 0 2px 4px rgba(0,0,0,0.02); max-width: none; width: 100%; box-sizing: border-box; position: relative;">
+							<?php if ( ! $is_pro ) : ?>
+								<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 10; border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+									<div style="background: #fff; padding: 15px 25px; border-radius: 10px; border: 1px solid #e5e5e5; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center;">
+										<p style="margin: 0 0 10px 0; font-weight: 700; color: #1d2327;">PRO Feature Locked</p>
+										<p style="margin: 0; font-size: 0.9em; color: #666;">Please activate your license to enable acceleration.</p>
+									</div>
+								</div>
+							<?php endif; ?>
+
 							<h2 style="margin-top: 0; font-size: 1.3em; display: flex; align-items: center; gap: 10px;">
 								<span class="dashicons dashicons-performance" style="color: #0073aa;"></span> 
 								Performance Optimization
@@ -58,8 +157,11 @@ class SFS_Settings {
 								<tr>
 									<th scope="row" style="width: 200px; padding: 15px 0;">Acceleration Mode</th>
 									<td>
-										<?php $mode = get_option( 'sfs_acceleration_mode', 'standard' ); ?>
-										<select name="sfs_acceleration_mode" style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;">
+										<?php 
+										$mode = get_option( 'sfs_acceleration_mode', 'standard' ); 
+										if ( ! $is_pro ) $mode = 'standard'; 
+										?>
+										<select name="sfs_acceleration_mode" <?php echo ! $is_pro ? 'disabled' : ''; ?> style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;">
 											<option value="standard" <?php selected( $mode, 'standard' ); ?>>Standard (PHP Chunked - Universal)</option>
 											<option value="x_sendfile" <?php selected( $mode, 'x_sendfile' ); ?>>X-Sendfile (Apache)</option>
 											<option value="x_accel" <?php selected( $mode, 'x_accel' ); ?>>X-Accel-Redirect (Nginx)</option>
@@ -73,17 +175,20 @@ class SFS_Settings {
 							</table>
 						</div>
 
-						<div class="card" style="margin: 0; padding: 25px; border-radius: 12px; border: 1px solid #d1d1d1; background: linear-gradient(135deg, #f8f7ff 0%, #ffffff 100%); border-left: 5px solid #6c5ce7; box-shadow: 0 4px 12px rgba(108, 92, 231, 0.05); max-width: none; width: 100%; box-sizing: border-box;">
-							<div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;">
-								<div style="flex: 1;">
-									<h2 style="color: #6c5ce7; margin-top: 0; font-size: 1.3em;">Unlock PRO Features</h2>
-									<p style="margin-bottom: 0; color: #444;">Upgrade to unlock advanced download analytics, role-based access control, and automated notifications.</p>
-								</div>
-								<div style="text-align: right;">
-									<a href="https://sgoplus.one/wp-share-service/" target="_blank" class="button button-primary" style="background: #6c5ce7; border-color: #6c5ce7; padding: 10px 25px; height: auto; font-weight: 600; border-radius: 8px; font-size: 1.1em; transition: all 0.2s;">Get PRO Version</a>
+						<!-- Get PRO Link (Only if not PRO) -->
+						<?php if ( ! $is_pro ) : ?>
+							<div class="card" style="margin: 0; padding: 25px; border-radius: 12px; border: 1px solid #d1d1d1; background: linear-gradient(135deg, #f8f7ff 0%, #ffffff 100%); border-left: 5px solid #6c5ce7; box-shadow: 0 4px 12px rgba(108, 92, 231, 0.05); max-width: none; width: 100%; box-sizing: border-box;">
+								<div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;">
+									<div style="flex: 1;">
+										<h2 style="color: #6c5ce7; margin-top: 0; font-size: 1.3em;">Unlock PRO Features</h2>
+										<p style="margin-bottom: 0; color: #444;">Upgrade to unlock advanced download analytics, role-based access control, and automated notifications.</p>
+									</div>
+									<div style="text-align: right;">
+										<a href="https://sgoplus.one/wp-share-service/" target="_blank" class="button button-primary" style="background: #6c5ce7; border-color: #6c5ce7; padding: 10px 25px; height: auto; font-weight: 600; border-radius: 8px; font-size: 1.1em; transition: all 0.2s;">Get PRO Version</a>
+									</div>
 								</div>
 							</div>
-						</div>
+						<?php endif; ?>
 
 						<div style="margin-top: 25px;">
 							<?php submit_button( 'Save All Settings', 'primary large', 'submit', true, array( 'style' => 'padding: 10px 30px; border-radius: 8px;' ) ); ?>
@@ -118,7 +223,7 @@ class SFS_Settings {
 						<hr style="margin: 25px 0; border: 0; border-top: 1px solid #f0f0f1;">
 						
 						<div style="font-size: 0.85em; color: #999;">
-							<p style="margin: 0;">WP Share Service Pro <strong>v1.7.5</strong></p>
+							<p style="margin: 0;">SGOplus WP Share Pro <strong>v1.8.5</strong></p>
 							<p style="margin: 5px 0 0 0;">© 2026 SGOplus</p>
 						</div>
 					</div>
@@ -127,7 +232,7 @@ class SFS_Settings {
 		</div>
 		<style>
 			.sfs-settings-wrap .card h2 { font-weight: 700; margin-bottom: 15px; }
-			.sfs-settings-wrap select:focus { border-color: #6c5ce7; box-shadow: 0 0 0 1px #6c5ce7; outline: 2px solid transparent; }
+			.sfs-settings-wrap select:focus, .sfs-settings-wrap input:focus { border-color: #6c5ce7; box-shadow: 0 0 0 1px #6c5ce7; outline: 2px solid transparent; }
 			.sfs-settings-wrap .button-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
 			@media (max-width: 900px) {
 				.sfs-settings-wrap > div { flex-direction: column; }
@@ -141,6 +246,11 @@ class SFS_Settings {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'sfs_logs';
 		
+		// Re-check PRO status inside the page just in case
+		if ( ! is_sfs_pro_active() ) {
+			wp_die( 'This page is only available in the PRO version. Please activate your license.' );
+		}
+
 		// Handle Clear Logs
 		if ( isset( $_POST['sfs_clear_logs'] ) && check_admin_referer( 'sfs_clear_logs_nonce' ) ) {
 			$wpdb->query( "TRUNCATE TABLE $table_name" );
