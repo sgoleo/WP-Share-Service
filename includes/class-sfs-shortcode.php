@@ -73,9 +73,18 @@ class Shortcode {
 		$btn_text = $has_password ? esc_html__( 'Download Protected', 'sgoplus-wp-share' ) : esc_html__( 'Download Now', 'sgoplus-wp-share' );
 		$btn_class = $has_password ? 'sfs-btn-protected' : 'sfs-btn-now';
 
+		$terms = get_the_terms( $post_id, 'sfs_category' );
+		$cat_slugs = array();
+		if ( $terms && ! is_wp_error( $terms ) ) {
+			foreach ( $terms as $term ) {
+				$cat_slugs[] = $term->slug;
+			}
+		}
+		$cat_data = implode( ',', $cat_slugs );
+
 		ob_start();
 		?>
-		<div class="sfs-file-card" id="sfs-card-<?php echo intval( $post_id ); ?>">
+		<div class="sfs-file-card" id="sfs-card-<?php echo intval( $post_id ); ?>" data-categories="<?php echo esc_attr( $cat_data ); ?>">
 			<!-- Card Header -->
 			<div class="sfs-card-top-bar">
 				<h3 class="sfs-card-title"><?php echo esc_html( $title ); ?></h3>
@@ -330,9 +339,12 @@ class Shortcode {
 
 				cards.forEach(card => {
 					const title = card.querySelector('.sfs-card-title').textContent.toLowerCase();
-					// Note: Category matching would need category info on the card element
-					// For now, let's just do search filtering
-					if (title.includes(term)) {
+					const cardCats = (card.getAttribute('data-categories') || '').split(',');
+					
+					const matchesSearch = title.includes(term);
+					const matchesCat = (cat === 'all' || cardCats.includes(cat));
+
+					if (matchesSearch && matchesCat) {
 						card.style.display = 'flex';
 					} else {
 						card.style.display = 'none';
@@ -341,6 +353,7 @@ class Shortcode {
 			}
 
 			if (searchInput) searchInput.addEventListener('input', filterFiles);
+			if (catFilter) catFilter.addEventListener('change', filterFiles);
 		});
 		</script>
 		<?php
