@@ -35,6 +35,16 @@ class Settings {
 				array( $this, 'render_pro_log_page' )
 			);
 		}
+
+		// Guild Page (Usage Guide)
+		add_submenu_page(
+			'edit.php?post_type=sfs_file',
+			esc_html__( 'Guild', 'sgoplus-wp-share' ),
+			esc_html__( 'Guild', 'sgoplus-wp-share' ),
+			'manage_options',
+			'sfs-guild',
+			array( $this, 'render_guild_page' )
+		);
 	}
 
 	public function register_settings() {
@@ -361,6 +371,222 @@ class Settings {
 		<style>
 		.status-tag { display: inline-block; text-transform: uppercase; letter-spacing: 0.5px; }
 		</style>
+		<?php
+	}
+
+	/**
+	 * Render the Guild (Usage Guide) page
+	 */
+	public function render_guild_page() {
+		?>
+		<div class="wrap sfs-guild-wrap" style="max-width: 1200px;">
+			<div class="sfs-guild-header">
+				<h1>
+					<span class="dashicons dashicons-welcome-learn-more"></span>
+					<?php esc_html_e( 'SGOplus Guild & Usage Guide', 'sgoplus-wp-share' ); ?>
+				</h1>
+				<p class="sfs-guild-subtitle"><?php esc_html_e( 'Master your file sharing service with professional guidance.', 'sgoplus-wp-share' ); ?></p>
+				
+				<div class="sfs-lang-switcher">
+					<button class="sfs-lang-btn active" data-lang="zh"><?php echo esc_html__( '繁體中文', 'sgoplus-wp-share' ); ?></button>
+					<button class="sfs-lang-btn" data-lang="jp"><?php echo esc_html__( '日本語', 'sgoplus-wp-share' ); ?></button>
+					<button class="sfs-lang-btn" data-lang="en"><?php echo esc_html__( 'English', 'sgoplus-wp-share' ); ?></button>
+				</div>
+			</div>
+
+			<div class="sfs-guild-content">
+				<!-- ZH Content -->
+				<div class="sfs-guild-pane active" id="pane-zh">
+					<div class="sfs-intro-card">
+						<h2><span class="dashicons dashicons-star-filled"></span> <?php echo esc_html__( '插件介紹', 'sgoplus-wp-share' ); ?></h2>
+						<p><?php echo esc_html__( 'SGOplus WP Share 是一款專為 WordPress 設計的高效檔案分享插件。它結合了安全性與極速下載體驗，支援密碼保護、角色存取控制以及伺服器級別的下載加速（X-Accel-Redirect / X-Sendfile）。', 'sgoplus-wp-share' ); ?></p>
+					</div>
+
+					<div class="sfs-grid-guide">
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-index-card"></span> <?php echo esc_html__( '1. 建立檔案', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( '在「Share Service+」選單中點擊「Add New」，上傳或輸入檔案 URL，並設定下載密碼或會員權限。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-editor-code"></span> <?php echo esc_html__( '2. 使用短代碼', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( '在任何頁面或文章中貼上短代碼即可嵌入檔案下載介面。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-performance"></span> <?php echo esc_html__( '3. 效能優化', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( '在「Settings」中開啟加速模式，可大幅降低伺服器負載並提升大檔案下載穩定性。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+					</div>
+
+					<div class="sfs-code-reference">
+						<h2><span class="dashicons dashicons-editor-help"></span> <?php echo esc_html__( '短代碼參考', 'sgoplus-wp-share' ); ?></h2>
+						<div class="sfs-code-item">
+							<code>[sgoplus_file id="123"]</code>
+							<p><?php echo esc_html__( '嵌入特定 ID 的單個檔案卡片。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-code-item">
+							<code>[sgoplus_files]</code>
+							<p><?php echo esc_html__( '顯示所有已發布檔案的搜尋過濾網格。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-code-item">
+							<code>[sgoplus_files category="software"]</code>
+							<p><?php echo esc_html__( '顯示特定分類下的檔案列表。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+					</div>
+				</div>
+
+				<!-- JP Content -->
+				<div class="sfs-guild-pane" id="pane-jp">
+					<div class="sfs-intro-card">
+						<h2><span class="dashicons dashicons-star-filled"></span> <?php echo esc_html__( 'プラグイン紹介', 'sgoplus-wp-share' ); ?></h2>
+						<p><?php echo esc_html__( 'SGOplus WP Share は、WordPress 用に設計されたプロフェッショナルなファイル共有ソリューションです。セキュリティと高速ダウンロード体験を兩立し、パスワード保護、ロールベースのアクセス制御、サーバーレベルのダウンロード加速（X-Accel-Redirect / X-Sendfile）をサポートしています。', 'sgoplus-wp-share' ); ?></p>
+					</div>
+
+					<div class="sfs-grid-guide">
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-index-card"></span> <?php echo esc_html__( '1. ファイル作成', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( '「Share Service+」メニューの「Add New」をクリックし、ファイルURLを入力。必要に応じてパスワードや權限を設定します。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-editor-code"></span> <?php echo esc_html__( '2. ショートコード', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( '固定ページや投稿にショートコードを貼り付けるだけで、洗練されたダウンロードカードが表示されます。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-performance"></span> <?php echo esc_html__( '3. パフォーマンス', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( '「Settings」でアクセラレーションモードを有効にすると、サーバー負荷を抑えつつ高速な通信が可能になります。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+					</div>
+
+					<div class="sfs-code-reference">
+						<h2><span class="dashicons dashicons-editor-help"></span> <?php echo esc_html__( 'ショートコードリファレンス', 'sgoplus-wp-share' ); ?></h2>
+						<div class="sfs-code-item">
+							<code>[sgoplus_file id="123"]</code>
+							<p><?php echo esc_html__( '特定のIDを持つ單一のファイルカードを埋め込みます。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-code-item">
+							<code>[sgoplus_files]</code>
+							<p><?php echo esc_html__( '公開されているすべてのファイルの檢索・フィルタリンググリッドを表示します。', 'sgoplus-wp-share' ); ?></p>
+						</div>
+					</div>
+				</div>
+
+				<!-- EN Content -->
+				<div class="sfs-guild-pane" id="pane-en">
+					<div class="sfs-intro-card">
+						<h2><span class="dashicons dashicons-star-filled"></span> <?php echo esc_html__( 'Plugin Introduction', 'sgoplus-wp-share' ); ?></h2>
+						<p><?php echo esc_html__( 'SGOplus WP Share is a high-performance file sharing solution for WordPress. It combines advanced security with lightning-fast download experiences, supporting password protection, role-based access control, and server-side acceleration (X-Accel-Redirect / X-Sendfile).', 'sgoplus-wp-share' ); ?></p>
+					</div>
+
+					<div class="sfs-grid-guide">
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-index-card"></span> <?php echo esc_html__( '1. Create Record', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( 'Go to "Share Service+" -> "Add New". Upload your file or paste a URL, then set your desired protection settings.', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-editor-code"></span> <?php echo esc_html__( '2. Use Shortcodes', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( 'Paste the shortcode into any page or post to display the premium download interface.', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-guide-card">
+							<h3><span class="dashicons dashicons-performance"></span> <?php echo esc_html__( '3. Optimization', 'sgoplus-wp-share' ); ?></h3>
+							<p><?php echo esc_html__( 'Enable Acceleration Mode in Settings to reduce CPU usage and provide stable downloads for large files.', 'sgoplus-wp-share' ); ?></p>
+						</div>
+					</div>
+
+					<div class="sfs-code-reference">
+						<h2><span class="dashicons dashicons-editor-help"></span> <?php echo esc_html__( 'Shortcode Reference', 'sgoplus-wp-share' ); ?></h2>
+						<div class="sfs-code-item">
+							<code>[sgoplus_file id="123"]</code>
+							<p><?php echo esc_html__( 'Embeds a specific file card by ID.', 'sgoplus-wp-share' ); ?></p>
+						</div>
+						<div class="sfs-code-item">
+							<code>[sgoplus_files]</code>
+							<p><?php echo esc_html__( 'Displays a searchable grid of all published files.', 'sgoplus-wp-share' ); ?></p>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="sfs-guild-footer">
+				<p><?php echo sprintf( 
+					/* translators: %s: Support center link */
+					esc_html__( '© 2026 SGOplus Group • %s', 'sgoplus-wp-share' ),
+					'<a href="https://sgoplus.one" target="_blank">' . esc_html__( 'Support Center', 'sgoplus-wp-share' ) . '</a>'
+				); ?></p>
+			</div>
+		</div>
+
+		<style>
+			:root {
+				--sfs-guild-primary: #6c5ce7;
+				--sfs-guild-secondary: #a29bfe;
+				--sfs-guild-bg: #f8f9fa;
+				--sfs-guild-card: #ffffff;
+				--sfs-guild-text: #2d3436;
+				--sfs-guild-muted: #636e72;
+			}
+
+			.sfs-guild-wrap { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; padding: 20px; color: var(--sfs-guild-text); }
+			
+			.sfs-guild-header { text-align: center; margin-bottom: 40px; background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); padding: 60px 20px; border-radius: 20px; color: #fff; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.2); }
+			.sfs-guild-header h1 { color: #fff; font-size: 2.5em; font-weight: 800; margin: 0 0 10px 0; display: flex; align-items: center; justify-content: center; gap: 15px; }
+			.sfs-guild-header h1 .dashicons { font-size: 40px; width: 40px; height: 40px; }
+			.sfs-guild-subtitle { font-size: 1.2em; opacity: 0.9; margin: 0; }
+
+			.sfs-lang-switcher { margin-top: 30px; display: flex; justify-content: center; gap: 10px; }
+			.sfs-lang-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 10px 25px; border-radius: 50px; cursor: pointer; font-weight: 600; transition: all 0.3s; backdrop-filter: blur(5px); }
+			.sfs-lang-btn:hover { background: rgba(255,255,255,0.25); }
+			.sfs-lang-btn.active { background: #fff; color: var(--sfs-guild-primary); border-color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+			.sfs-guild-pane { display: none; animation: sfsFadeIn 0.5s ease; }
+			.sfs-guild-pane.active { display: block; }
+			@keyframes sfsFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+			.sfs-intro-card { background: var(--sfs-guild-card); padding: 40px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); margin-bottom: 30px; border-left: 6px solid var(--sfs-guild-primary); }
+			.sfs-intro-card h2 { margin-top: 0; color: var(--sfs-guild-primary); display: flex; align-items: center; gap: 10px; }
+			.sfs-intro-card p { font-size: 1.1em; line-height: 1.8; color: var(--sfs-guild-muted); margin: 0; }
+
+			.sfs-grid-guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+			.sfs-guide-card { background: var(--sfs-guild-card); padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); transition: transform 0.3s; }
+			.sfs-guide-card:hover { transform: translateY(-5px); }
+			.sfs-guide-card h3 { margin-top: 0; color: #1d2327; display: flex; align-items: center; gap: 10px; font-size: 1.3em; }
+			.sfs-guide-card p { color: var(--sfs-guild-muted); line-height: 1.6; margin: 0; }
+
+			.sfs-code-reference { background: #1d2327; color: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+			.sfs-code-reference h2 { color: var(--sfs-guild-secondary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+			.sfs-code-item { margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+			.sfs-code-item:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+			.sfs-code-item code { background: rgba(108, 92, 231, 0.2); color: #a29bfe; padding: 8px 15px; border-radius: 8px; font-size: 1.1em; display: inline-block; margin-bottom: 10px; border: 1px solid rgba(162, 155, 254, 0.3); }
+			.sfs-code-item p { margin: 0; opacity: 0.8; font-size: 0.95em; }
+
+			.sfs-guild-footer { text-align: center; margin-top: 50px; padding-bottom: 30px; color: var(--sfs-guild-muted); }
+			.sfs-guild-footer a { color: var(--sfs-guild-primary); text-decoration: none; font-weight: 600; }
+
+			@media (max-width: 768px) {
+				.sfs-guild-header { padding: 40px 15px; }
+				.sfs-guild-header h1 { font-size: 1.8em; }
+				.sfs-intro-card, .sfs-code-reference { padding: 25px; }
+			}
+		</style>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const buttons = document.querySelectorAll('.sfs-lang-btn');
+				const panes = document.querySelectorAll('.sfs-guild-pane');
+
+				buttons.forEach(btn => {
+					btn.addEventListener('click', function() {
+						const lang = this.getAttribute('data-lang');
+						
+						// Update buttons
+						buttons.forEach(b => b.classList.remove('active'));
+						this.classList.add('active');
+
+						// Update panes
+						panes.forEach(p => p.classList.remove('active'));
+						document.getElementById('pane-' + lang).classList.add('active');
+					});
+				});
+			});
+		</script>
 		<?php
 	}
 }

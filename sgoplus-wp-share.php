@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SGOplus WP Share
  * Description: A secure plugin for sharing password-protected files with advanced performance optimization.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: SGOplus
  * Author URI: https://sgoplus.one
  * License: GPLv2 or later
@@ -10,7 +10,7 @@
  * Requires at least: 6.5
  * Tested up to: 6.9
  * Requires PHP: 7.4
- * Stable tag: 1.2.0
+ * Stable tag: 1.2.1
  * Text Domain: sgoplus-wp-share
  */
 
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'SGOPLUS_SFS_VERSION', '1.2.0' );
+define( 'SGOPLUS_SFS_VERSION', '1.2.1' );
 define( 'SGOPLUS_SFS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SGOPLUS_SFS_URL', plugin_dir_url( __FILE__ ) );
 

@@ -96,7 +96,7 @@ class CPT {
 	public function display_id_column( $column, $post_id ) {
 		if ( $column === 'sfs_id' ) {
 			echo '<code>' . intval( $post_id ) . '</code><br>';
-			echo '<small><code>[sgo_file_share id="' . intval( $post_id ) . '"]</code></small>';
+			echo '<small><code>[sgoplus_file id="' . intval( $post_id ) . '"]</code></small>';
 		}
 		if ( $column === 'sfs_downloads' ) {
 			$count = get_post_meta( $post_id, '_sfs_download_count', true );
