@@ -1,4 +1,4 @@
-# Workspace Rules - WP-Share-Service
+# Workspace Rules - File-Share-Service
 
 本文件定義了此專案開發時必須嚴格遵守的規範。
 

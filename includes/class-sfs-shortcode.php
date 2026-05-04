@@ -1,6 +1,6 @@
 <?php
 
-namespace SGOplus\WP_Share;
+namespace SGOplus\File_Share;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,12 +20,12 @@ class Shortcode {
 
 		$post_id = intval( $atts['id'] );
 		if ( ! $post_id ) {
-			return '<p>' . esc_html__( 'Error: Invalid file ID.', 'sgoplus-wp-share' ) . '</p>';
+			return '<p>' . esc_html__( 'Error: Invalid file ID.', 'sgoplus-file-share' ) . '</p>';
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post || $post->post_type !== 'sfs_file' ) {
-			return '<p>' . esc_html__( 'Error: File record not found.', 'sgoplus-wp-share' ) . '</p>';
+			return '<p>' . esc_html__( 'Error: File record not found.', 'sgoplus-file-share' ) . '</p>';
 		}
 
 		$title = get_the_title( $post_id );
@@ -70,7 +70,7 @@ class Shortcode {
 		}
 
 		$has_password = (bool) get_post_meta( $post_id, '_sfs_password', true );
-		$btn_text = $has_password ? esc_html__( 'Download Protected', 'sgoplus-wp-share' ) : esc_html__( 'Download Now', 'sgoplus-wp-share' );
+		$btn_text = $has_password ? esc_html__( 'Download Protected', 'sgoplus-file-share' ) : esc_html__( 'Download Now', 'sgoplus-file-share' );
 		$btn_class = $has_password ? 'sfs-btn-protected' : 'sfs-btn-now';
 
 		$terms = get_the_terms( $post_id, 'sfs_category' );
@@ -90,7 +90,7 @@ class Shortcode {
 				<h3 class="sfs-card-title"><?php echo esc_html( $title ); ?></h3>
 				<?php if ( ! empty( $update_log ) ) : ?>
 					<button type="button" class="sfs-log-toggle" onclick="this.closest('.sfs-file-card').querySelector('.sfs-changelog-overlay').classList.toggle('active')">
-						<?php esc_html_e( 'Log', 'sgoplus-wp-share' ); ?>
+						<?php esc_html_e( 'Log', 'sgoplus-file-share' ); ?>
 					</button>
 				<?php endif; ?>
 			</div>
@@ -100,7 +100,7 @@ class Shortcode {
 				<div class="sfs-media-inner">
 					<img src="<?php echo esc_url( $thumbnail ); ?>" alt="<?php echo esc_attr( $title ); ?>">
 					<?php if ( $is_members_only ) : ?>
-						<div class="sfs-badge-overlay"><?php esc_html_e( 'MEMBERS', 'sgoplus-wp-share' ); ?></div>
+						<div class="sfs-badge-overlay"><?php esc_html_e( 'MEMBERS', 'sgoplus-file-share' ); ?></div>
 					<?php endif; ?>
 					
 					<!-- Changelog Overlay -->
@@ -108,7 +108,7 @@ class Shortcode {
 						<div class="sfs-changelog-overlay">
 							<div class="sfs-changelog-content">
 								<button type="button" class="sfs-close-log" onclick="this.closest('.sfs-changelog-overlay').classList.remove('active')">&times;</button>
-								<h4><?php esc_html_e( 'Changelog', 'sgoplus-wp-share' ); ?></h4>
+								<h4><?php esc_html_e( 'Changelog', 'sgoplus-file-share' ); ?></h4>
 								<pre><?php echo esc_html( $update_log ); ?></pre>
 							</div>
 						</div>
@@ -124,10 +124,10 @@ class Shortcode {
 				
 				<div class="sfs-card-footer">
 					<?php if ( $is_expired ) : ?>
-						<div class="sfs-alert sfs-alert-error"><?php esc_html_e( 'This download link has expired.', 'sgoplus-wp-share' ); ?></div>
+						<div class="sfs-alert sfs-alert-error"><?php esc_html_e( 'This download link has expired.', 'sgoplus-file-share' ); ?></div>
 					<?php elseif ( $role_restricted ) : ?>
 						<a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="sfs-download-btn sfs-btn-lock">
-							<span class="dashicons dashicons-lock"></span> <?php esc_html_e( 'Login to Access', 'sgoplus-wp-share' ); ?>
+							<span class="dashicons dashicons-lock"></span> <?php esc_html_e( 'Login to Access', 'sgoplus-file-share' ); ?>
 						</a>
 					<?php else : ?>
 						<form action="" method="post" class="sfs-download-form">
@@ -137,7 +137,7 @@ class Shortcode {
 							
 							<?php if ( $has_password ) : ?>
 								<div class="sfs-password-row">
-									<input type="password" name="sfs_password" placeholder="<?php echo esc_attr__( 'Enter Password', 'sgoplus-wp-share' ); ?>" required>
+									<input type="password" name="sfs_password" placeholder="<?php echo esc_attr__( 'Enter Password', 'sgoplus-file-share' ); ?>" required>
 								</div>
 							<?php endif; ?>
 							
@@ -296,7 +296,7 @@ class Shortcode {
 
 		$query = new \WP_Query( $args );
 		if ( ! $query->have_posts() ) {
-			return '<p>' . esc_html__( 'No files found.', 'sgoplus-wp-share' ) . '</p>';
+			return '<p>' . esc_html__( 'No files found.', 'sgoplus-file-share' ) . '</p>';
 		}
 
 		ob_start();
@@ -304,9 +304,9 @@ class Shortcode {
 		<div class="sfs-file-list-container">
 			<!-- Header / Filter Bar -->
 			<div class="sfs-list-header">
-				<input type="text" class="sfs-search-input" placeholder="<?php echo esc_attr__( 'Search files...', 'sgoplus-wp-share' ); ?>" id="sfs-search-field">
+				<input type="text" class="sfs-search-input" placeholder="<?php echo esc_attr__( 'Search files...', 'sgoplus-file-share' ); ?>" id="sfs-search-field">
 				<select class="sfs-cat-select" id="sfs-cat-filter">
-					<option value="all"><?php esc_html_e( 'All Categories', 'sgoplus-wp-share' ); ?></option>
+					<option value="all"><?php esc_html_e( 'All Categories', 'sgoplus-file-share' ); ?></option>
 					<?php
 					$categories = get_terms( array( 'taxonomy' => 'sfs_category', 'hide_empty' => true ) );
 					foreach ( $categories as $cat ) {
@@ -314,7 +314,7 @@ class Shortcode {
 					}
 					?>
 				</select>
-				<button type="button" class="sfs-search-btn"><?php esc_html_e( 'Search', 'sgoplus-wp-share' ); ?></button>
+				<button type="button" class="sfs-search-btn"><?php esc_html_e( 'Search', 'sgoplus-file-share' ); ?></button>
 			</div>
 
 			<div class="sfs-file-list-wrapper">

@@ -1,6 +1,6 @@
 <?php
 
-namespace SGOplus\WP_Share;
+namespace SGOplus\File_Share;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,24 +20,24 @@ class Downloader {
 
 		// Verify Nonce for security
 		if ( ! isset( $_POST['sfs_download_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['sfs_download_nonce'] ) ), 'sfs_download_file' ) ) {
-			wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'sgoplus-wp-share' ) );
+			wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'sgoplus-file-share' ) );
 		}
 
 		$post_id = isset( $_POST['sfs_id'] ) ? intval( wp_unslash( $_POST['sfs_id'] ) ) : 0;
 		if ( ! $post_id ) {
-			wp_die( esc_html__( 'Invalid File ID.', 'sgoplus-wp-share' ) );
+			wp_die( esc_html__( 'Invalid File ID.', 'sgoplus-file-share' ) );
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post || $post->post_type !== 'sfs_file' ) {
-			wp_die( esc_html__( 'File not found.', 'sgoplus-wp-share' ) );
+			wp_die( esc_html__( 'File not found.', 'sgoplus-file-share' ) );
 		}
 
 		// Check Role Access (PRO)
 		$allowed_roles = get_post_meta( $post_id, '_sfs_allowed_roles', true );
 		if ( ! empty( $allowed_roles ) && is_array( $allowed_roles ) ) {
 			if ( ! is_user_logged_in() ) {
-				wp_die( esc_html__( 'Error: This file is restricted to members only. Please log in first.', 'sgoplus-wp-share' ) );
+				wp_die( esc_html__( 'Error: This file is restricted to members only. Please log in first.', 'sgoplus-file-share' ) );
 			}
 			$user = wp_get_current_user();
 			$user_roles = (array) $user->roles;
@@ -49,7 +49,7 @@ class Downloader {
 				}
 			}
 			if ( ! $has_access && ! current_user_can( 'administrator' ) ) {
-				wp_die( esc_html__( 'Error: You do not have the required role to download this file.', 'sgoplus-wp-share' ) );
+				wp_die( esc_html__( 'Error: You do not have the required role to download this file.', 'sgoplus-file-share' ) );
 			}
 		}
 
@@ -58,7 +58,7 @@ class Downloader {
 		if ( ! empty( $expiry_date ) ) {
 			$today = gmdate( 'Y-m-d' );
 			if ( $today > $expiry_date ) {
-				wp_die( esc_html__( 'Error: This download link has expired.', 'sgoplus-wp-share' ) );
+				wp_die( esc_html__( 'Error: This download link has expired.', 'sgoplus-file-share' ) );
 			}
 		}
 
@@ -67,7 +67,7 @@ class Downloader {
 		$current_count = get_post_meta( $post_id, '_sfs_download_count', true ) ?: 0;
 		if ( ! empty( $download_limit ) && intval( $download_limit ) > 0 ) {
 			if ( intval( $current_count ) >= intval( $download_limit ) ) {
-				wp_die( esc_html__( 'Error: Download limit reached for this file.', 'sgoplus-wp-share' ) );
+				wp_die( esc_html__( 'Error: Download limit reached for this file.', 'sgoplus-file-share' ) );
 			}
 		}
 
@@ -76,19 +76,19 @@ class Downloader {
 		if ( ! empty( $hashed_password ) ) {
 			$submitted_password = isset( $_POST['sfs_password'] ) ? sanitize_text_field( wp_unslash( $_POST['sfs_password'] ) ) : '';
 			if ( ! wp_check_password( $submitted_password, $hashed_password ) ) {
-				wp_die( esc_html__( 'Incorrect password. Please try again.', 'sgoplus-wp-share' ) );
+				wp_die( esc_html__( 'Incorrect password. Please try again.', 'sgoplus-file-share' ) );
 			}
 		}
 
 		// Get File Info
 		$file_url = get_post_meta( $post_id, '_sfs_file_url', true );
 		if ( ! $file_url ) {
-			wp_die( esc_html__( 'No file associated with this record.', 'sgoplus-wp-share' ) );
+			wp_die( esc_html__( 'No file associated with this record.', 'sgoplus-file-share' ) );
 		}
 
 		$file_path = $this->url_to_path( $file_url );
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			wp_die( esc_html__( 'Error: The requested file could not be found on the server.', 'sgoplus-wp-share' ) );
+			wp_die( esc_html__( 'Error: The requested file could not be found on the server.', 'sgoplus-file-share' ) );
 		}
 
 		// --- PRO Logic Start ---
@@ -100,7 +100,7 @@ class Downloader {
 		$enable_notifications = get_post_meta( $post_id, '_sfs_enable_notifications', true );
 		if ( $enable_notifications === 'yes' ) {
 			$to = get_option( 'admin_email' );
-			$subject = '[SGOplus WP Share] New Download: ' . get_the_title( $post_id );
+			$subject = '[SGOplus File Share] New Download: ' . get_the_title( $post_id );
 			$user_info = is_user_logged_in() ? wp_get_current_user()->display_name : 'Guest';
 			$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'Unknown';
 			$message = "File: " . get_the_title( $post_id ) . "\nBy: " . $user_info . "\nIP: " . $ip_address . "\nTime: " . current_time( 'mysql' );

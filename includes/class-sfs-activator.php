@@ -1,6 +1,6 @@
 <?php
 
-namespace SGOplus\WP_Share;
+namespace SGOplus\File_Share;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

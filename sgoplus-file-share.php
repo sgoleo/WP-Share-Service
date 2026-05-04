@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: SGOplus WP Share
+ * Plugin Name: SGOplus File Share
  * Description: A secure plugin for sharing password-protected files with advanced performance optimization.
  * Version: 1.2.1
  * Author: SGOplus
@@ -11,10 +11,10 @@
  * Tested up to: 6.9
  * Requires PHP: 7.4
  * Stable tag: 1.2.1
- * Text Domain: sgoplus-wp-share
+ * Text Domain: sgoplus-file-share
  */
 
-namespace SGOplus\WP_Share;
+namespace SGOplus\File_Share;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
