@@ -1,0 +1,63 @@
+/* Settings Page Styles */
+.sgoplus-fs-settings-wrap .card h2 { font-weight: 700; margin-bottom: 15px; }
+.sgoplus-fs-settings-wrap select:focus, .sgoplus-fs-settings-wrap input:focus { border-color: #6c5ce7; box-shadow: 0 0 0 1px #6c5ce7; outline: 2px solid transparent; }
+.sgoplus-fs-settings-wrap .button-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+@media (max-width: 900px) {
+	.sgoplus-fs-settings-wrap > div { flex-direction: column; }
+	.sgoplus-fs-settings-wrap div[style*="width: 320px"] { width: 100% !important; }
+}
+
+/* Log Page Styles */
+.status-tag { display: inline-block; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Guild Page Styles */
+:root {
+	--sgoplus-fs-guild-primary: #6c5ce7;
+	--sgoplus-fs-guild-secondary: #a29bfe;
+	--sgoplus-fs-guild-bg: #f8f9fa;
+	--sgoplus-fs-guild-card: #ffffff;
+	--sgoplus-fs-guild-text: #2d3436;
+	--sgoplus-fs-guild-muted: #636e72;
+}
+
+.sgoplus-fs-guild-wrap { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; padding: 20px; color: var(--sgoplus-fs-guild-text); }
+
+.sgoplus-fs-guild-header { text-align: center; margin-bottom: 40px; background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); padding: 60px 20px; border-radius: 20px; color: #fff; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.2); }
+.sgoplus-fs-guild-header h1 { color: #fff; font-size: 2.5em; font-weight: 800; margin: 0 0 10px 0; display: flex; align-items: center; justify-content: center; gap: 15px; }
+.sgoplus-fs-guild-header h1 .dashicons { font-size: 40px; width: 40px; height: 40px; }
+.sgoplus-fs-guild-subtitle { font-size: 1.2em; opacity: 0.9; margin: 0; }
+
+.sgoplus-fs-lang-switcher { margin-top: 30px; display: flex; justify-content: center; gap: 10px; }
+.sgoplus-fs-lang-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 10px 25px; border-radius: 50px; cursor: pointer; font-weight: 600; transition: all 0.3s; backdrop-filter: blur(5px); }
+.sgoplus-fs-lang-btn:hover { background: rgba(255,255,255,0.25); }
+.sgoplus-fs-lang-btn.active { background: #fff; color: var(--sgoplus-fs-guild-primary); border-color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+.sgoplus-fs-guild-pane { display: none; animation: sgoplusFadeIn 0.5s ease; }
+.sgoplus-fs-guild-pane.active { display: block; }
+@keyframes sgoplusFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.sgoplus-fs-intro-card { background: var(--sgoplus-fs-guild-card); padding: 40px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); margin-bottom: 30px; border-left: 6px solid var(--sgoplus-fs-guild-primary); }
+.sgoplus-fs-intro-card h2 { margin-top: 0; color: var(--sgoplus-fs-guild-primary); display: flex; align-items: center; gap: 10px; }
+.sgoplus-fs-intro-card p { font-size: 1.1em; line-height: 1.8; color: var(--sgoplus-fs-guild-muted); margin: 0; }
+
+.sgoplus-fs-grid-guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.sgoplus-fs-guide-card { background: var(--sgoplus-fs-guild-card); padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); transition: transform 0.3s; }
+.sgoplus-fs-guide-card:hover { transform: translateY(-5px); }
+.sgoplus-fs-guide-card h3 { margin-top: 0; color: #1d2327; display: flex; align-items: center; gap: 10px; font-size: 1.3em; }
+.sgoplus-fs-guide-card p { color: var(--sgoplus-fs-guild-muted); line-height: 1.6; margin: 0; }
+
+.sgoplus-fs-code-reference { background: #1d2327; color: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.sgoplus-fs-code-reference h2 { color: var(--sgoplus-fs-guild-secondary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+.sgoplus-fs-code-item { margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+.sgoplus-fs-code-item:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+.sgoplus-fs-code-item code { background: rgba(108, 92, 231, 0.2); color: #a29bfe; padding: 8px 15px; border-radius: 8px; font-size: 1.1em; display: inline-block; margin-bottom: 10px; border: 1px solid rgba(162, 155, 254, 0.3); }
+.sgoplus-fs-code-item p { margin: 0; opacity: 0.8; font-size: 0.95em; }
+
+.sgoplus-fs-guild-footer { text-align: center; margin-top: 50px; padding-bottom: 30px; color: var(--sgoplus-fs-guild-muted); }
+.sgoplus-fs-guild-footer a { color: var(--sgoplus-fs-guild-primary); text-decoration: none; font-weight: 600; }
+
+@media (max-width: 768px) {
+	.sgoplus-fs-guild-header { padding: 40px 15px; }
+	.sgoplus-fs-guild-header h1 { font-size: 1.8em; }
+	.sgoplus-fs-intro-card, .sgoplus-fs-code-reference { padding: 25px; }
+}

@@ -1,0 +1,63 @@
+/* Settings Page Styles */
+.sfs-settings-wrap .card h2 { font-weight: 700; margin-bottom: 15px; }
+.sfs-settings-wrap select:focus, .sfs-settings-wrap input:focus { border-color: #6c5ce7; box-shadow: 0 0 0 1px #6c5ce7; outline: 2px solid transparent; }
+.sfs-settings-wrap .button-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+@media (max-width: 900px) {
+	.sfs-settings-wrap > div { flex-direction: column; }
+	.sfs-settings-wrap div[style*="width: 320px"] { width: 100% !important; }
+}
+
+/* Log Page Styles */
+.status-tag { display: inline-block; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Guild Page Styles */
+:root {
+	--sfs-guild-primary: #6c5ce7;
+	--sfs-guild-secondary: #a29bfe;
+	--sfs-guild-bg: #f8f9fa;
+	--sfs-guild-card: #ffffff;
+	--sfs-guild-text: #2d3436;
+	--sfs-guild-muted: #636e72;
+}
+
+.sfs-guild-wrap { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; padding: 20px; color: var(--sfs-guild-text); }
+
+.sfs-guild-header { text-align: center; margin-bottom: 40px; background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); padding: 60px 20px; border-radius: 20px; color: #fff; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.2); }
+.sfs-guild-header h1 { color: #fff; font-size: 2.5em; font-weight: 800; margin: 0 0 10px 0; display: flex; align-items: center; justify-content: center; gap: 15px; }
+.sfs-guild-header h1 .dashicons { font-size: 40px; width: 40px; height: 40px; }
+.sfs-guild-subtitle { font-size: 1.2em; opacity: 0.9; margin: 0; }
+
+.sfs-lang-switcher { margin-top: 30px; display: flex; justify-content: center; gap: 10px; }
+.sfs-lang-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 10px 25px; border-radius: 50px; cursor: pointer; font-weight: 600; transition: all 0.3s; backdrop-filter: blur(5px); }
+.sfs-lang-btn:hover { background: rgba(255,255,255,0.25); }
+.sfs-lang-btn.active { background: #fff; color: var(--sfs-guild-primary); border-color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+.sfs-guild-pane { display: none; animation: sfsFadeIn 0.5s ease; }
+.sfs-guild-pane.active { display: block; }
+@keyframes sfsFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.sfs-intro-card { background: var(--sfs-guild-card); padding: 40px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); margin-bottom: 30px; border-left: 6px solid var(--sfs-guild-primary); }
+.sfs-intro-card h2 { margin-top: 0; color: var(--sfs-guild-primary); display: flex; align-items: center; gap: 10px; }
+.sfs-intro-card p { font-size: 1.1em; line-height: 1.8; color: var(--sfs-guild-muted); margin: 0; }
+
+.sfs-grid-guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.sfs-guide-card { background: var(--sfs-guild-card); padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); transition: transform 0.3s; }
+.sfs-guide-card:hover { transform: translateY(-5px); }
+.sfs-guide-card h3 { margin-top: 0; color: #1d2327; display: flex; align-items: center; gap: 10px; font-size: 1.3em; }
+.sfs-guide-card p { color: var(--sfs-guild-muted); line-height: 1.6; margin: 0; }
+
+.sfs-code-reference { background: #1d2327; color: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.sfs-code-reference h2 { color: var(--sfs-guild-secondary); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+.sfs-code-item { margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+.sfs-code-item:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+.sfs-code-item code { background: rgba(108, 92, 231, 0.2); color: #a29bfe; padding: 8px 15px; border-radius: 8px; font-size: 1.1em; display: inline-block; margin-bottom: 10px; border: 1px solid rgba(162, 155, 254, 0.3); }
+.sfs-code-item p { margin: 0; opacity: 0.8; font-size: 0.95em; }
+
+.sfs-guild-footer { text-align: center; margin-top: 50px; padding-bottom: 30px; color: var(--sfs-guild-muted); }
+.sfs-guild-footer a { color: var(--sfs-guild-primary); text-decoration: none; font-weight: 600; }
+
+@media (max-width: 768px) {
+	.sfs-guild-header { padding: 40px 15px; }
+	.sfs-guild-header h1 { font-size: 1.8em; }
+	.sfs-intro-card, .sfs-code-reference { padding: 25px; }
+}

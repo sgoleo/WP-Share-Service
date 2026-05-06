@@ -14,27 +14,27 @@ class Downloader {
 	}
 
 	public function handle_download_request() {
-		if ( ! isset( $_POST['sfs_action'] ) || $_POST['sfs_action'] !== 'download' ) {
+		if ( ! isset( $_POST['sgoplus_fs_action'] ) || $_POST['sgoplus_fs_action'] !== 'download' ) {
 			return;
 		}
 
 		// Verify Nonce for security
-		if ( ! isset( $_POST['sfs_download_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['sfs_download_nonce'] ) ), 'sfs_download_file' ) ) {
+		if ( ! isset( $_POST['sgoplus_fs_download_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['sgoplus_fs_download_nonce'] ) ), 'sgoplus_fs_download_file' ) ) {
 			wp_die( esc_html__( 'Security check failed. Please refresh the page and try again.', 'sgoplus-file-share' ) );
 		}
 
-		$post_id = isset( $_POST['sfs_id'] ) ? intval( wp_unslash( $_POST['sfs_id'] ) ) : 0;
+		$post_id = isset( $_POST['sgoplus_fs_id'] ) ? intval( wp_unslash( $_POST['sgoplus_fs_id'] ) ) : 0;
 		if ( ! $post_id ) {
 			wp_die( esc_html__( 'Invalid File ID.', 'sgoplus-file-share' ) );
 		}
 
 		$post = get_post( $post_id );
-		if ( ! $post || $post->post_type !== 'sfs_file' ) {
+		if ( ! $post || $post->post_type !== 'sgoplus_fs_file' ) {
 			wp_die( esc_html__( 'File not found.', 'sgoplus-file-share' ) );
 		}
 
 		// Check Role Access (PRO)
-		$allowed_roles = get_post_meta( $post_id, '_sfs_allowed_roles', true );
+		$allowed_roles = get_post_meta( $post_id, '_sgoplus_fs_allowed_roles', true );
 		if ( ! empty( $allowed_roles ) && is_array( $allowed_roles ) ) {
 			if ( ! is_user_logged_in() ) {
 				wp_die( esc_html__( 'Error: This file is restricted to members only. Please log in first.', 'sgoplus-file-share' ) );
@@ -54,7 +54,7 @@ class Downloader {
 		}
 
 		// Check Expiration Date (PRO)
-		$expiry_date = get_post_meta( $post_id, '_sfs_expiry_date', true );
+		$expiry_date = get_post_meta( $post_id, '_sgoplus_fs_expiry_date', true );
 		if ( ! empty( $expiry_date ) ) {
 			$today = gmdate( 'Y-m-d' );
 			if ( $today > $expiry_date ) {
@@ -63,8 +63,8 @@ class Downloader {
 		}
 
 		// Check Download Limit (PRO)
-		$download_limit = get_post_meta( $post_id, '_sfs_download_limit', true );
-		$current_count = get_post_meta( $post_id, '_sfs_download_count', true ) ?: 0;
+		$download_limit = get_post_meta( $post_id, '_sgoplus_fs_download_limit', true );
+		$current_count = get_post_meta( $post_id, '_sgoplus_fs_download_count', true ) ?: 0;
 		if ( ! empty( $download_limit ) && intval( $download_limit ) > 0 ) {
 			if ( intval( $current_count ) >= intval( $download_limit ) ) {
 				wp_die( esc_html__( 'Error: Download limit reached for this file.', 'sgoplus-file-share' ) );
@@ -72,16 +72,16 @@ class Downloader {
 		}
 
 		// Verify Password
-		$hashed_password = get_post_meta( $post_id, '_sfs_password', true );
+		$hashed_password = get_post_meta( $post_id, '_sgoplus_fs_password', true );
 		if ( ! empty( $hashed_password ) ) {
-			$submitted_password = isset( $_POST['sfs_password'] ) ? sanitize_text_field( wp_unslash( $_POST['sfs_password'] ) ) : '';
+			$submitted_password = isset( $_POST['sgoplus_fs_password'] ) ? sanitize_text_field( wp_unslash( $_POST['sgoplus_fs_password'] ) ) : '';
 			if ( ! wp_check_password( $submitted_password, $hashed_password ) ) {
 				wp_die( esc_html__( 'Incorrect password. Please try again.', 'sgoplus-file-share' ) );
 			}
 		}
 
 		// Get File Info
-		$file_url = get_post_meta( $post_id, '_sfs_file_url', true );
+		$file_url = get_post_meta( $post_id, '_sgoplus_fs_file_url', true );
 		if ( ! $file_url ) {
 			wp_die( esc_html__( 'No file associated with this record.', 'sgoplus-file-share' ) );
 		}
@@ -97,7 +97,7 @@ class Downloader {
 		$this->record_download_log( $post_id );
 
 		// 2. Handle Email Notifications
-		$enable_notifications = get_post_meta( $post_id, '_sfs_enable_notifications', true );
+		$enable_notifications = get_post_meta( $post_id, '_sgoplus_fs_enable_notifications', true );
 		if ( $enable_notifications === 'yes' ) {
 			$to = get_option( 'admin_email' );
 			$subject = '[SGOplus File Share] New Download: ' . get_the_title( $post_id );
@@ -109,7 +109,7 @@ class Downloader {
 
 		// 3. Increment Download Count
 		$count = intval( $current_count ) + 1;
-		update_post_meta( $post_id, '_sfs_download_count', $count );
+		update_post_meta( $post_id, '_sgoplus_fs_download_count', $count );
 
 		// --- PRO Logic End ---
 
@@ -124,8 +124,8 @@ class Downloader {
 		$mime_type = wp_check_filetype( $file_name )['type'] ?: 'application/octet-stream';
 
 		// Acceleration Optimization (Gated by PRO License)
-		$accel_mode = get_option( 'sfs_acceleration_mode', 'standard' );
-		if ( ! is_sfs_pro_active() ) {
+		$accel_mode = get_option( 'sgoplus_fs_acceleration_mode', 'standard' );
+		if ( ! is_sgoplus_fs_pro_active() ) {
 			$accel_mode = 'standard';
 		}
 
@@ -136,11 +136,11 @@ class Downloader {
 		$is_litespeed = ( stripos( $server_soft, 'litespeed' ) !== false );
 
 		// Auto-fallback if server doesn't match selected mode
-		if ( $accel_mode === 'x_sendfile' && ! $is_apache && ! $is_litespeed ) {
+		if ( $accel_mode === 'sgoplus_fs_sendfile' && ! $is_apache && ! $is_litespeed ) {
 			$accel_mode = 'standard';
-		} elseif ( $accel_mode === 'x_accel' && ! $is_nginx ) {
+		} elseif ( $accel_mode === 'sgoplus_fs_accel' && ! $is_nginx ) {
 			$accel_mode = 'standard';
-		} elseif ( $accel_mode === 'x_litespeed' && ! $is_litespeed ) {
+		} elseif ( $accel_mode === 'sgoplus_fs_litespeed' && ! $is_litespeed ) {
 			$accel_mode = 'standard';
 		}
 
@@ -188,7 +188,7 @@ class Downloader {
 
 	private function record_download_log( $post_id ) {
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'sfs_logs';
+		$table_name = $wpdb->prefix . 'sgoplus_fs_logs';
 		
 		$user_id = get_current_user_id();
 		$user_status = is_user_logged_in() ? 'member' : 'guest';

@@ -16,12 +16,12 @@ class Settings {
 
 	public function enqueue_admin_assets( $hook ) {
 		// Only load on our plugin pages
-		if ( strpos( $hook, 'sfs-' ) === false && strpos( $hook, 'sfs_file' ) === false ) {
+		if ( strpos( $hook, 'sgoplus-fs-' ) === false && strpos( $hook, 'sgoplus_fs_file' ) === false ) {
 			return;
 		}
 
-		wp_enqueue_style( 'sfs-admin-style', SGOPLUS_SFS_URL . 'assets/sfs-admin.css', array(), SGOPLUS_SFS_VERSION );
-		wp_enqueue_script( 'sfs-admin-script', SGOPLUS_SFS_URL . 'assets/sfs-admin.js', array( 'jquery' ), SGOPLUS_SFS_VERSION, true );
+		wp_enqueue_style( 'sgoplus-fs-admin-style', SGOPLUS_FS_URL . 'assets/sgoplus-fs-admin.css', array(), SGOPLUS_FS_VERSION );
+		wp_enqueue_script( 'sgoplus-fs-admin-script', SGOPLUS_FS_URL . 'assets/sgoplus-fs-admin.js', array( 'jquery' ), SGOPLUS_FS_VERSION, true );
 		
 		if ( $hook === 'post.php' || $hook === 'post-new.php' ) {
 			wp_enqueue_media();
@@ -31,43 +31,43 @@ class Settings {
 	public function add_settings_page() {
 		// Main Settings
 		add_submenu_page(
-			'edit.php?post_type=sfs_file',
+			'edit.php?post_type=sgoplus_fs_file',
 			esc_html__( 'Settings', 'sgoplus-file-share' ),
 			esc_html__( 'Settings', 'sgoplus-file-share' ),
 			'manage_options',
-			'sfs-settings',
+			'sgoplus-fs-settings',
 			array( $this, 'render_settings_page' )
 		);
 
 		// PRO Log Submenu (Only if PRO is active)
-		if ( is_sfs_pro_active() ) {
+		if ( is_sgoplus_fs_pro_active() ) {
 			add_submenu_page(
-				'edit.php?post_type=sfs_file',
+				'edit.php?post_type=sgoplus_fs_file',
 				esc_html__( 'PRO Log', 'sgoplus-file-share' ),
 				esc_html__( 'PRO Log', 'sgoplus-file-share' ),
 				'manage_options',
-				'sfs-pro-log',
+				'sgoplus-fs-pro-log',
 				array( $this, 'render_pro_log_page' )
 			);
 		}
 
 		// Guild Page (Usage Guide)
 		add_submenu_page(
-			'edit.php?post_type=sfs_file',
+			'edit.php?post_type=sgoplus_fs_file',
 			esc_html__( 'Guild', 'sgoplus-file-share' ),
 			esc_html__( 'Guild', 'sgoplus-file-share' ),
 			'manage_options',
-			'sfs-guild',
+			'sgoplus-fs-guild',
 			array( $this, 'render_guild_page' )
 		);
 	}
 
 	public function register_settings() {
-		register_setting( 'sfs_settings_group', 'sfs_acceleration_mode', array(
+		register_setting( 'sgoplus_fs_settings_group', 'sgoplus_fs_acceleration_mode', array(
 			'sanitize_callback' => 'sanitize_text_field',
 			'default'           => 'standard',
 		) );
-		register_setting( 'sfs_settings_group', 'sfs_license_key', array(
+		register_setting( 'sgoplus_fs_settings_group', 'sgoplus_fs_license_key', array(
 			'sanitize_callback' => array( $this, 'validate_license' ),
 		) );
 	}
@@ -77,13 +77,13 @@ class Settings {
 	 */
 	public function validate_license( $key ) {
 		$key = sanitize_text_field( $key );
-		$old_key = get_option( 'sfs_license_key' );
-		$license_status = get_option( 'sfs_license_status' );
+		$old_key = get_option( 'sgoplus_fs_license_key' );
+		$license_status = get_option( 'sgoplus_fs_license_status' );
 		$is_currently_valid = ( isset( $license_status['isValid'] ) && $license_status['isValid'] === true );
 		
 		// If key is empty, reset status
 		if ( empty( $key ) ) {
-			update_option( 'sfs_license_status', array( 'isValid' => false ) );
+			update_option( 'sgoplus_fs_license_status', array( 'isValid' => false ) );
 			return $key;
 		}
 
@@ -107,7 +107,7 @@ class Settings {
 		$response = wp_remote_get( $query_url, array( 'timeout' => 20 ) );
 
 		if ( is_wp_error( $response ) ) {
-			add_settings_error( 'sfs_license_key', 'api_error', sprintf( 
+			add_settings_error( 'sgoplus_fs_license_key', 'api_error', sprintf( 
 				/* translators: %s: connection error message */
 				esc_html__( 'Connection error: %s. Please try again in 3 seconds.', 'sgoplus-file-share' ), 
 				$response->get_error_message() 
@@ -121,7 +121,7 @@ class Settings {
 		// SLM returns result: 'success' or 'error'
 		$is_valid = ( isset( $data['result'] ) && $data['result'] === 'success' );
 
-		update_option( 'sfs_license_status', array(
+		update_option( 'sgoplus_fs_license_status', array(
 			'isValid'     => $is_valid,
 			'lastChecked' => current_time( 'mysql' ),
 			'message'     => isset( $data['message'] ) ? $data['message'] : ''
@@ -129,16 +129,16 @@ class Settings {
 
 		if ( ! $is_valid ) {
 			$error_msg = isset( $data['message'] ) ? $data['message'] : esc_html__( 'Invalid License Key.', 'sgoplus-file-share' );
-			add_settings_error( 'sfs_license_key', 'invalid_key', $error_msg . ' ' . esc_html__( 'Please wait 3 seconds before trying again.', 'sgoplus-file-share' ) );
+			add_settings_error( 'sgoplus_fs_license_key', 'invalid_key', $error_msg . ' ' . esc_html__( 'Please wait 3 seconds before trying again.', 'sgoplus-file-share' ) );
 		}
 
 		return $key;
 	}
 
 	public function render_settings_page() {
-		$is_pro = is_sfs_pro_active();
+		$is_pro = is_sgoplus_fs_pro_active();
 		?>
-		<div class="wrap sfs-settings-wrap" style="max-width: 1200px;">
+		<div class="wrap sgoplus-fs-settings-wrap" style="max-width: 1200px;">
 			<h1 style="margin-bottom: 20px;"><?php esc_html_e( 'SGOplus File Share Settings', 'sgoplus-file-share' ); ?></h1>
 			
 			<div style="display: flex; gap: 20px; align-items: flex-start;">
@@ -146,8 +146,8 @@ class Settings {
 				<div style="flex: 1; min-width: 0;">
 					<form method="post" action="options.php">
 						<?php
-						settings_fields( 'sfs_settings_group' );
-						do_settings_sections( 'sfs_settings_group' );
+						settings_fields( 'sgoplus_fs_settings_group' );
+						do_settings_sections( 'sgoplus_fs_settings_group' );
 						?>
 						
 						<!-- License Card -->
@@ -162,7 +162,7 @@ class Settings {
 								<tr>
 									<th scope="row" style="width: 200px; padding: 15px 0;"><?php esc_html_e( 'License Key', 'sgoplus-file-share' ); ?></th>
 									<td>
-										<input type="text" name="sfs_license_key" value="<?php echo esc_attr( get_option( 'sfs_license_key' ) ); ?>" class="regular-text" style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;" placeholder="SFS-XXXX-XXXX-XXXX" />
+										<input type="text" name="sgoplus_fs_license_key" value="<?php echo esc_attr( get_option( 'sgoplus_fs_license_key' ) ); ?>" class="regular-text" style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;" placeholder="SFS-XXXX-XXXX-XXXX" />
 										<?php if ( $is_pro ) : ?>
 											<p style="color: #28a745; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px;">
 												<span class="dashicons dashicons-yes-alt"></span> <?php esc_html_e( 'PRO License is Active', 'sgoplus-file-share' ); ?>
@@ -197,14 +197,14 @@ class Settings {
 									<th scope="row" style="width: 200px; padding: 15px 0;"><?php esc_html_e( 'Acceleration Mode', 'sgoplus-file-share' ); ?></th>
 									<td>
 										<?php 
-										$mode = get_option( 'sfs_acceleration_mode', 'standard' ); 
+										$mode = get_option( 'sgoplus_fs_acceleration_mode', 'standard' ); 
 										if ( ! $is_pro ) $mode = 'standard'; 
 										?>
-										<select name="sfs_acceleration_mode" <?php echo ! $is_pro ? 'disabled' : ''; ?> style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;">
+										<select name="sgoplus_fs_acceleration_mode" <?php echo ! $is_pro ? 'disabled' : ''; ?> style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;">
 											<option value="standard" <?php selected( $mode, 'standard' ); ?>><?php esc_html_e( 'Standard (PHP Chunked - Universal)', 'sgoplus-file-share' ); ?></option>
-											<option value="x_sendfile" <?php selected( $mode, 'x_sendfile' ); ?>><?php esc_html_e( 'X-Sendfile (Apache)', 'sgoplus-file-share' ); ?></option>
-											<option value="x_accel" <?php selected( $mode, 'x_accel' ); ?>><?php esc_html_e( 'X-Accel-Redirect (Nginx)', 'sgoplus-file-share' ); ?></option>
-											<option value="x_litespeed" <?php selected( $mode, 'x_litespeed' ); ?>><?php esc_html_e( 'X-LiteSpeed-Location (LiteSpeed / OpenLiteSpeed)', 'sgoplus-file-share' ); ?></option>
+											<option value="sgoplus_fs_sendfile" <?php selected( $mode, 'sgoplus_fs_sendfile' ); ?>><?php esc_html_e( 'X-Sendfile (Apache)', 'sgoplus-file-share' ); ?></option>
+											<option value="sgoplus_fs_accel" <?php selected( $mode, 'sgoplus_fs_accel' ); ?>><?php esc_html_e( 'X-Accel-Redirect (Nginx)', 'sgoplus-file-share' ); ?></option>
+											<option value="sgoplus_fs_litespeed" <?php selected( $mode, 'sgoplus_fs_litespeed' ); ?>><?php esc_html_e( 'X-LiteSpeed-Location (LiteSpeed / OpenLiteSpeed)', 'sgoplus-file-share' ); ?></option>
 										</select>
 										<div style="margin-top: 10px; padding: 12px; background: #fff8e1; border-left: 4px solid #ffc107; font-size: 0.9em; border-radius: 4px;">
 											<strong><?php esc_html_e( 'Notice:', 'sgoplus-file-share' ); ?></strong> <?php esc_html_e( 'Specialized modes require server-side configuration. If downloads fail (0 bytes or 404), please revert to Standard mode.', 'sgoplus-file-share' ); ?>
@@ -240,7 +240,7 @@ class Settings {
 					<div class="card" style="padding: 30px 20px; border-radius: 15px; text-align: center; border: 1px solid #e5e5e5; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #fff; margin: 0; position: sticky; top: 50px;">
 						<h3 style="margin-top: 0; color: #1d2327; font-size: 1.2em;">Developer Hub</h3>
 						<div style="margin: 20px 0;">
-							<img src="<?php echo esc_url( SGOPLUS_SFS_URL . 'assets/logo.png' ); ?>" alt="SGOplus" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f8f9fa; box-shadow: 0 5px 15px rgba(0,0,0,0.05);" onerror="this.src='https://secure.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=90&d=mm&r=g';">
+							<img src="<?php echo esc_url( SGOPLUS_FS_URL . 'assets/logo.png' ); ?>" alt="SGOplus" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f8f9fa; box-shadow: 0 5px 15px rgba(0,0,0,0.05);" onerror="this.src='https://secure.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=90&d=mm&r=g';">
 						</div>
 						
 						<p style="font-weight: 800; font-size: 1.2em; margin: 0 0 5px 0; color: #1d2327;">SGOplus Group</p>
@@ -262,7 +262,7 @@ class Settings {
 						<hr style="margin: 25px 0; border: 0; border-top: 1px solid #f0f0f1;">
 						
 						<div style="font-size: 0.85em; color: #999;">
-							<p style="margin: 0;">SGOplus File Share <strong>v1.2.0</strong></p>
+							<p style="margin: 0;">SGOplus File Share <strong>v1.2.1</strong></p>
 							<p style="margin: 5px 0 0 0;">© 2026 SGOplus</p>
 						</div>
 					</div>
@@ -271,19 +271,18 @@ class Settings {
 		</div>
 		<?php
 	}
-	}
 
 	public function render_pro_log_page() {
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'sfs_logs';
+		$table_name = $wpdb->prefix . 'sgoplus_fs_logs';
 		
 		// Re-check PRO status inside the page just in case
-		if ( ! is_sfs_pro_active() ) {
+		if ( ! is_sgoplus_fs_pro_active() ) {
 			wp_die( esc_html__( 'This page is only available in the PRO version. Please activate your license.', 'sgoplus-file-share' ) );
 		}
 
 		// Handle Clear Logs
-		if ( isset( $_POST['sfs_clear_logs'] ) && check_admin_referer( 'sfs_clear_logs_nonce' ) ) {
+		if ( isset( $_POST['sgoplus_fs_clear_logs'] ) && check_admin_referer( 'sgoplus_fs_clear_logs_nonce' ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $table_name ) );
 			echo '<div class="updated"><p>' . esc_html__( 'Logs cleared successfully.', 'sgoplus-file-share' ) . '</p></div>';
@@ -309,8 +308,8 @@ class Settings {
 
 			<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
 				<form method="post" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to clear all logs?', 'sgoplus-file-share' ) ); ?>');">
-					<?php wp_nonce_field( 'sfs_clear_logs_nonce' ); ?>
-					<input type="submit" name="sfs_clear_logs" class="button button-secondary" value="<?php echo esc_attr__( 'Clear All Logs', 'sgoplus-file-share' ); ?>" />
+					<?php wp_nonce_field( 'sgoplus_fs_clear_logs_nonce' ); ?>
+					<input type="submit" name="sgoplus_fs_clear_logs" class="button button-secondary" value="<?php echo esc_attr__( 'Clear All Logs', 'sgoplus-file-share' ); ?>" />
 				</form>
 				
 				<?php if ( $num_pages > 1 ) : ?>
@@ -377,62 +376,61 @@ class Settings {
 		</div>
 		<?php
 	}
-	}
 
 	/**
 	 * Render the Guild (Usage Guide) page
 	 */
 	public function render_guild_page() {
 		?>
-		<div class="wrap sfs-guild-wrap" style="max-width: 1200px;">
-			<div class="sfs-guild-header">
+		<div class="wrap sgoplus-fs-guild-wrap" style="max-width: 1200px;">
+			<div class="sgoplus-fs-guild-header">
 				<h1>
 					<span class="dashicons dashicons-welcome-learn-more"></span>
 					<?php esc_html_e( 'SGOplus Guild & Usage Guide', 'sgoplus-file-share' ); ?>
 				</h1>
-				<p class="sfs-guild-subtitle"><?php esc_html_e( 'Master your file sharing service with professional guidance.', 'sgoplus-file-share' ); ?></p>
+				<p class="sgoplus-fs-guild-subtitle"><?php esc_html_e( 'Master your file sharing service with professional guidance.', 'sgoplus-file-share' ); ?></p>
 				
-				<div class="sfs-lang-switcher">
-					<button class="sfs-lang-btn active" data-lang="zh"><?php echo esc_html__( '繁體中文', 'sgoplus-file-share' ); ?></button>
-					<button class="sfs-lang-btn" data-lang="jp"><?php echo esc_html__( '日本語', 'sgoplus-file-share' ); ?></button>
-					<button class="sfs-lang-btn" data-lang="en"><?php echo esc_html__( 'English', 'sgoplus-file-share' ); ?></button>
+				<div class="sgoplus-fs-lang-switcher">
+					<button class="sgoplus-fs-lang-btn active" data-lang="zh"><?php echo esc_html__( '繁體中文', 'sgoplus-file-share' ); ?></button>
+					<button class="sgoplus-fs-lang-btn" data-lang="jp"><?php echo esc_html__( '日本語', 'sgoplus-file-share' ); ?></button>
+					<button class="sgoplus-fs-lang-btn" data-lang="en"><?php echo esc_html__( 'English', 'sgoplus-file-share' ); ?></button>
 				</div>
 			</div>
 
-			<div class="sfs-guild-content">
+			<div class="sgoplus-fs-guild-content">
 				<!-- ZH Content -->
-				<div class="sfs-guild-pane active" id="pane-zh">
-					<div class="sfs-intro-card">
+				<div class="sgoplus-fs-guild-pane active" id="pane-zh">
+					<div class="sgoplus-fs-intro-card">
 						<h2><span class="dashicons dashicons-star-filled"></span> <?php echo esc_html__( '插件介紹', 'sgoplus-file-share' ); ?></h2>
 						<p><?php echo esc_html__( 'SGOplus File Share 是一款專為 WordPress 設計的高效檔案分享插件。它結合了安全性與極速下載體驗，支援密碼保護、角色存取控制以及伺服器級別的下載加速（X-Accel-Redirect / X-Sendfile）。', 'sgoplus-file-share' ); ?></p>
 					</div>
 
-					<div class="sfs-grid-guide">
-						<div class="sfs-guide-card">
+					<div class="sgoplus-fs-grid-guide">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-index-card"></span> <?php echo esc_html__( '1. 建立檔案', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( '在「Share Service+」選單中點擊「Add New」，上傳或輸入檔案 URL，並設定下載密碼或會員權限。', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-guide-card">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-editor-code"></span> <?php echo esc_html__( '2. 使用短代碼', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( '在任何頁面或文章中貼上短代碼即可嵌入檔案下載介面。', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-guide-card">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-performance"></span> <?php echo esc_html__( '3. 效能優化', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( '在「Settings」中開啟加速模式，可大幅降低伺服器負載並提升大檔案下載穩定性。', 'sgoplus-file-share' ); ?></p>
 						</div>
 					</div>
 
-					<div class="sfs-code-reference">
+					<div class="sgoplus-fs-code-reference">
 						<h2><span class="dashicons dashicons-editor-help"></span> <?php echo esc_html__( '短代碼參考', 'sgoplus-file-share' ); ?></h2>
-						<div class="sfs-code-item">
+						<div class="sgoplus-fs-code-item">
 							<code>[sgoplus_file id="123"]</code>
 							<p><?php echo esc_html__( '嵌入特定 ID 的單個檔案卡片。', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-code-item">
+						<div class="sgoplus-fs-code-item">
 							<code>[sgoplus_files]</code>
 							<p><?php echo esc_html__( '顯示所有已發布檔案的搜尋過濾網格。', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-code-item">
+						<div class="sgoplus-fs-code-item">
 							<code>[sgoplus_files category="software"]</code>
 							<p><?php echo esc_html__( '顯示特定分類下的檔案列表。', 'sgoplus-file-share' ); ?></p>
 						</div>
@@ -440,34 +438,34 @@ class Settings {
 				</div>
 
 				<!-- JP Content -->
-				<div class="sfs-guild-pane" id="pane-jp">
-					<div class="sfs-intro-card">
+				<div class="sgoplus-fs-guild-pane" id="pane-jp">
+					<div class="sgoplus-fs-intro-card">
 						<h2><span class="dashicons dashicons-star-filled"></span> <?php echo esc_html__( 'プラグイン紹介', 'sgoplus-file-share' ); ?></h2>
 						<p><?php echo esc_html__( 'SGOplus File Share は、WordPress 用に設計されたプロフェッショナルなファイル共有ソリューションです。セキュリティと高速ダウンロード体験を兩立し、パスワード保護、ロールベースのアクセス制御、サーバーレベルのダウンロード加速（X-Accel-Redirect / X-Sendfile）をサポートしています。', 'sgoplus-file-share' ); ?></p>
 					</div>
 
-					<div class="sfs-grid-guide">
-						<div class="sfs-guide-card">
+					<div class="sgoplus-fs-grid-guide">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-index-card"></span> <?php echo esc_html__( '1. ファイル作成', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( '「Share Service+」メニューの「Add New」をクリックし、ファイルURLを入力。必要に応じてパスワードや權限を設定します。', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-guide-card">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-editor-code"></span> <?php echo esc_html__( '2. ショートコード', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( '固定ページや投稿にショートコードを貼り付けるだけで、洗練されたダウンロードカードが表示されます。', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-guide-card">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-performance"></span> <?php echo esc_html__( '3. パフォーマンス', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( '「Settings」でアクセラレーションモードを有効にすると、サーバー負荷を抑えつつ高速な通信が可能になります。', 'sgoplus-file-share' ); ?></p>
 						</div>
 					</div>
 
-					<div class="sfs-code-reference">
+					<div class="sgoplus-fs-code-reference">
 						<h2><span class="dashicons dashicons-editor-help"></span> <?php echo esc_html__( 'ショートコードリファレンス', 'sgoplus-file-share' ); ?></h2>
-						<div class="sfs-code-item">
+						<div class="sgoplus-fs-code-item">
 							<code>[sgoplus_file id="123"]</code>
 							<p><?php echo esc_html__( '特定のIDを持つ單一のファイルカードを埋め込みます。', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-code-item">
+						<div class="sgoplus-fs-code-item">
 							<code>[sgoplus_files]</code>
 							<p><?php echo esc_html__( '公開されているすべてのファイルの檢索・フィルタリンググリッドを表示します。', 'sgoplus-file-share' ); ?></p>
 						</div>
@@ -475,34 +473,34 @@ class Settings {
 				</div>
 
 				<!-- EN Content -->
-				<div class="sfs-guild-pane" id="pane-en">
-					<div class="sfs-intro-card">
+				<div class="sgoplus-fs-guild-pane" id="pane-en">
+					<div class="sgoplus-fs-intro-card">
 						<h2><span class="dashicons dashicons-star-filled"></span> <?php echo esc_html__( 'Plugin Introduction', 'sgoplus-file-share' ); ?></h2>
 						<p><?php echo esc_html__( 'SGOplus File Share is a high-performance file sharing solution for WordPress. It combines advanced security with lightning-fast download experiences, supporting password protection, role-based access control, and server-side acceleration (X-Accel-Redirect / X-Sendfile).', 'sgoplus-file-share' ); ?></p>
 					</div>
 
-					<div class="sfs-grid-guide">
-						<div class="sfs-guide-card">
+					<div class="sgoplus-fs-grid-guide">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-index-card"></span> <?php echo esc_html__( '1. Create Record', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( 'Go to "Share Service+" -> "Add New". Upload your file or paste a URL, then set your desired protection settings.', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-guide-card">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-editor-code"></span> <?php echo esc_html__( '2. Use Shortcodes', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( 'Paste the shortcode into any page or post to display the premium download interface.', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-guide-card">
+						<div class="sgoplus-fs-guide-card">
 							<h3><span class="dashicons dashicons-performance"></span> <?php echo esc_html__( '3. Optimization', 'sgoplus-file-share' ); ?></h3>
 							<p><?php echo esc_html__( 'Enable Acceleration Mode in Settings to reduce CPU usage and provide stable downloads for large files.', 'sgoplus-file-share' ); ?></p>
 						</div>
 					</div>
 
-					<div class="sfs-code-reference">
+					<div class="sgoplus-fs-code-reference">
 						<h2><span class="dashicons dashicons-editor-help"></span> <?php echo esc_html__( 'Shortcode Reference', 'sgoplus-file-share' ); ?></h2>
-						<div class="sfs-code-item">
+						<div class="sgoplus-fs-code-item">
 							<code>[sgoplus_file id="123"]</code>
 							<p><?php echo esc_html__( 'Embeds a specific file card by ID.', 'sgoplus-file-share' ); ?></p>
 						</div>
-						<div class="sfs-code-item">
+						<div class="sgoplus-fs-code-item">
 							<code>[sgoplus_files]</code>
 							<p><?php echo esc_html__( 'Displays a searchable grid of all published files.', 'sgoplus-file-share' ); ?></p>
 						</div>
@@ -510,7 +508,7 @@ class Settings {
 				</div>
 			</div>
 			
-			<div class="sfs-guild-footer">
+			<div class="sgoplus-fs-guild-footer">
 				<p><?php echo sprintf( 
 					/* translators: %s: Support center link */
 					esc_html__( '© 2026 SGOplus Group • %s', 'sgoplus-file-share' ),
@@ -520,6 +518,5 @@ class Settings {
 		</div>
 
 		<?php
-	}
 	}
 }

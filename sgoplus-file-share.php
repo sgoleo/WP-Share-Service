@@ -4,7 +4,7 @@
  * Description: A secure plugin for sharing password-protected files with advanced performance optimization.
  * Version: 1.2.1
  * Author: SGOplus
- * Author URI: https://sgoplus.one
+ * Author URI: https://sgoplus.one/
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Requires at least: 6.5
@@ -21,22 +21,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants
-define( 'SGOPLUS_SFS_VERSION', '1.2.1' );
-define( 'SGOPLUS_SFS_PATH', plugin_dir_path( __FILE__ ) );
-define( 'SGOPLUS_SFS_URL', plugin_dir_url( __FILE__ ) );
+define( 'SGOPLUS_FS_VERSION', '1.2.1' );
+define( 'SGOPLUS_FS_PATH', wp_normalize_path( plugin_dir_path( __FILE__ ) ) );
+define( 'SGOPLUS_FS_URL', plugin_dir_url( __FILE__ ) );
 
 // Include required classes
-require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-activator.php';
-require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-cpt.php';
-require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-shortcode.php';
-require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-downloader.php';
-require_once SGOPLUS_SFS_PATH . 'includes/class-sfs-settings.php';
+require_once SGOPLUS_FS_PATH . 'includes/class-sgoplus-fs-activator.php';
+require_once SGOPLUS_FS_PATH . 'includes/class-sgoplus-fs-cpt.php';
+require_once SGOPLUS_FS_PATH . 'includes/class-sgoplus-fs-shortcode.php';
+require_once SGOPLUS_FS_PATH . 'includes/class-sgoplus-fs-downloader.php';
+require_once SGOPLUS_FS_PATH . 'includes/class-sgoplus-fs-settings.php';
 
 /**
  * Global Helper: Check if PRO license is active
  */
-function is_sfs_pro_active() {
-	$license_status = get_option( 'sfs_license_status' );
+function is_sgoplus_fs_pro_active() {
+	$license_status = get_option( 'sgoplus_fs_license_status' );
 	return ( isset( $license_status['isValid'] ) && $license_status['isValid'] === true );
 }
 
