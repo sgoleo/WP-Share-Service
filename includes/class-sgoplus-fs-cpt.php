@@ -187,8 +187,6 @@ class CPT {
 
 		echo '<p><label><strong>' . esc_html__( 'Update Log:', 'sgoplus-file-share' ) . '</strong></label><br>';
 		echo '<textarea name="sgoplus_fs_update_log" style="width:100%; height:100px;">' . esc_textarea( $update_log ) . '</textarea></p>';
-
-		<?php
 	}
 
 	public function save_meta_data( $post_id ) {

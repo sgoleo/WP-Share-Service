@@ -39,7 +39,7 @@ SGOplus File Share utilizes the following third-party services to enhance plugin
 *   Purpose: Used to validate PRO license keys and activate premium features.
 *   Data Sent: License key, site URL, and plugin identifier.
 *   Conditions: Data is sent only when a license key is entered or verified in the settings page.
-*   Links: [Terms of Service](https://virduct.com/terms-of-service/), [Privacy Policy](https://virduct.com/privacy-policy/)
+*   Links: [Terms and Privacy Policy](https://sgoplus.one/policy)
 
 2. Gravatar (secure.gravatar.com)
 *   Purpose: Displays a fallback developer avatar in the plugin settings and developer hub.

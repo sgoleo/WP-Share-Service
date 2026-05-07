@@ -90,7 +90,7 @@ class Shortcode {
 
 		ob_start();
 		?>
-		<div class="sgoplus-fs-file-card" id="sgoplus-fs-card-<?php echo intval( $post_id ); ?>" data-categories="<?php echo esc_attr( $cat_data ); ?>">
+		<div class="sgoplus-fs-file-card" id="sgoplus-fs-card-<?php echo esc_attr( intval( $post_id ) ); ?>" data-categories="<?php echo esc_attr( $cat_data ); ?>">
 			<!-- Card Header -->
 			<div class="sgoplus-fs-card-top-bar">
 				<h3 class="sgoplus-fs-card-title"><?php echo esc_html( $title ); ?></h3>
@@ -138,7 +138,7 @@ class Shortcode {
 					<?php else : ?>
 						<form action="" method="post" class="sgoplus-fs-download-form">
 							<?php wp_nonce_field( 'sgoplus_fs_download_file', 'sgoplus_fs_download_nonce' ); ?>
-							<input type="hidden" name="sgoplus_fs_id" value="<?php echo intval( $post_id ); ?>">
+							<input type="hidden" name="sgoplus_fs_id" value="<?php echo esc_attr( intval( $post_id ) ); ?>">
 							<input type="hidden" name="sgoplus_fs_action" value="download">
 							
 							<?php if ( $has_password ) : ?>
