@@ -146,7 +146,7 @@ class Downloader {
 
 		header( 'Content-Description: File Transfer' );
 		header( 'Content-Type: ' . $mime_type );
-		header( 'Content-Disposition: attachment; filename="' . $file_name . '"' );
+		header( 'Content-Disposition: attachment; filename="' . esc_attr( $file_name ) . '"' );
 		header( 'Expires: 0' );
 		header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
 		header( 'Pragma: public' );

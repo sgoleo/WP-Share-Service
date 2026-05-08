@@ -5,7 +5,7 @@ Contributors: sgoleo, sgoplus
 Tags: file sharing, secure download, password protection
 Requires at least: 6.5
 Tested up to: 6.9
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -41,12 +41,15 @@ SGOplus File Share utilizes the following third-party services to enhance plugin
 *   Conditions: Data is sent only when a license key is entered or verified in the settings page.
 *   Links: [Terms and Privacy Policy](https://sgoplus.one/policy)
 
-2. Gravatar (secure.gravatar.com)
-*   Purpose: Displays a fallback developer avatar in the plugin settings and developer hub.
-*   Data Sent: A hashed identifier (based on a static developer email) is used to retrieve the public profile image. No user-specific data is transmitted.
-*   Links: [Automattic Privacy Policy](https://automattic.com/privacy/)
-
-3. Cloudflare (HTTP_CF_IPCOUNTRY)
+2. Cloudflare (HTTP_CF_IPCOUNTRY)
 *   Purpose: If your site is behind Cloudflare, the plugin may read the `HTTP_CF_IPCOUNTRY` header to record the downloader's country in the PRO download logs.
 *   Data Received: Country code provided by Cloudflare.
 *   Conditions: Only active for PRO users using the logging feature.
+
+== Privacy Policy ==
+
+SGOplus File Share is committed to user privacy. 
+*   **License Validation**: When you activate a PRO license, your site URL and license key are sent to virduct.com to verify eligibility. No personal user data is transmitted during this process.
+*   **Local Data**: All download logs, file metadata, and passwords are stored locally on your WordPress database and are never shared with external parties.
+*   **Opt-in**: PRO features are entirely optional. If you do not enter a license key, no external communication with our license server will occur.
+

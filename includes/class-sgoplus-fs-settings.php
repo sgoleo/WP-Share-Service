@@ -124,11 +124,11 @@ class Settings {
 		update_option( 'sgoplus_fs_license_status', array(
 			'isValid'     => $is_valid,
 			'lastChecked' => current_time( 'mysql' ),
-			'message'     => isset( $data['message'] ) ? $data['message'] : ''
+			'message'     => isset( $data['message'] ) ? sanitize_text_field( $data['message'] ) : ''
 		) );
 
 		if ( ! $is_valid ) {
-			$error_msg = isset( $data['message'] ) ? $data['message'] : esc_html__( 'Invalid License Key.', 'sgoplus-file-share' );
+			$error_msg = isset( $data['message'] ) ? sanitize_text_field( $data['message'] ) : esc_html__( 'Invalid License Key.', 'sgoplus-file-share' );
 			add_settings_error( 'sgoplus_fs_license_key', 'invalid_key', $error_msg . ' ' . esc_html__( 'Please wait 3 seconds before trying again.', 'sgoplus-file-share' ) );
 		}
 
@@ -240,7 +240,7 @@ class Settings {
 					<div class="card" style="padding: 30px 20px; border-radius: 15px; text-align: center; border: 1px solid #e5e5e5; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: #fff; margin: 0; position: sticky; top: 50px;">
 						<h3 style="margin-top: 0; color: #1d2327; font-size: 1.2em;">Developer Hub</h3>
 						<div style="margin: 20px 0;">
-							<img src="<?php echo esc_url( SGOPLUS_FS_URL . 'assets/logo.png' ); ?>" alt="SGOplus" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f8f9fa; box-shadow: 0 5px 15px rgba(0,0,0,0.05);" onerror="this.src='https://secure.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=90&d=mm&r=g';">
+							<img src="<?php echo esc_url( SGOPLUS_FS_URL . 'assets/logo.jpg' ); ?>" alt="SGOplus" style="width: 90px; height: 90px; border-radius: 50%; border: 4px solid #f8f9fa; box-shadow: 0 5px 15px rgba(0,0,0,0.05);" onerror="this.src='<?php echo esc_url( SGOPLUS_FS_URL . 'assets/default-avatar.png' ); ?>';">
 						</div>
 						
 						<p style="font-weight: 800; font-size: 1.2em; margin: 0 0 5px 0; color: #1d2327;">SGOplus Group</p>
@@ -262,7 +262,7 @@ class Settings {
 						<hr style="margin: 25px 0; border: 0; border-top: 1px solid #f0f0f1;">
 						
 						<div style="font-size: 0.85em; color: #999;">
-							<p style="margin: 0;">SGOplus File Share <strong>v1.2.1</strong></p>
+							<p style="margin: 0;">SGOplus File Share <strong>v1.2.2</strong></p>
 							<p style="margin: 5px 0 0 0;">© 2026 SGOplus</p>
 						</div>
 					</div>
@@ -349,7 +349,7 @@ class Settings {
 					<?php if ( $logs ) : ?>
 						<?php foreach ( $logs as $log ) : ?>
 							<?php 
-							$file_title = get_the_title( $log->file_id ) ?: '<em>Deleted File (ID: '.$log->file_id.')</em>';
+							$file_title = get_the_title( $log->file_id ) ?: '<em>' . esc_html__( 'Deleted File', 'sgoplus-file-share' ) . ' (ID: '.intval($log->file_id).')</em>';
 							$user_name = $log->user_id ? get_userdata( $log->user_id )->display_name : 'Guest';
 							?>
 							<tr>

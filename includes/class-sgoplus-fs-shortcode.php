@@ -38,7 +38,7 @@ class Shortcode {
 		$content = $post->post_content;
 		$file_url = get_post_meta( $post_id, '_sgoplus_fs_file_url', true );
 		$update_log = get_post_meta( $post_id, '_sgoplus_fs_update_log', true );
-		$thumbnail = get_the_post_thumbnail_url( $post_id, 'medium' ) ?: 'https://via.placeholder.com/150';
+		$thumbnail = get_the_post_thumbnail_url( $post_id, 'medium' ) ?: SGOPLUS_FS_URL . 'assets/placeholder.png';
 		
 		$is_pro = is_sgoplus_fs_pro_active();
 
