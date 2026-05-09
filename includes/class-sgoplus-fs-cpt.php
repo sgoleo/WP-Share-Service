@@ -128,7 +128,7 @@ class CPT {
 		$allowed_roles = get_post_meta( $post->ID, '_sgoplus_fs_allowed_roles', true ) ?: array();
 		$enable_notifications = get_post_meta( $post->ID, '_sgoplus_fs_enable_notifications', true );
 		
-		$is_pro = is_sgoplus_fs_pro_active();
+		$is_pro = sgoplus_fs_is_pro_active();
 
 		echo '<div style="background: #e7f7ff; padding: 15px; border: 1px solid #bce8f1; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">';
 		echo '<div><strong>' . esc_html__( 'Shortcode:', 'sgoplus-file-share' ) . '</strong><br><code>[sgoplus_file id="' . intval( $post->ID ) . '"]</code></div>';
@@ -223,7 +223,7 @@ class CPT {
 		}
 
 		// Only save PRO meta if license is active
-		if ( is_sgoplus_fs_pro_active() ) {
+		if ( sgoplus_fs_is_pro_active() ) {
 			// PRO: Download Limit
 			if ( isset( $_POST['sgoplus_fs_download_limit'] ) ) {
 				update_post_meta( $post_id, '_sgoplus_fs_download_limit', intval( wp_unslash( $_POST['sgoplus_fs_download_limit'] ) ) );

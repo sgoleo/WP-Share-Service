@@ -5,8 +5,8 @@ Contributors: sgoleo, sgoplus
 Tags: file sharing, secure download, password protection
 Requires at least: 6.5
 Tested up to: 6.9
-Stable tag: 1.2.2
-Requires PHP: 7.4
+Stable tag: 1.2.3
+Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,4 +52,18 @@ SGOplus File Share is committed to user privacy.
 *   **License Validation**: When you activate a PRO license, your site URL and license key are sent to virduct.com to verify eligibility. No personal user data is transmitted during this process.
 *   **Local Data**: All download logs, file metadata, and passwords are stored locally on your WordPress database and are never shared with external parties.
 *   **Opt-in**: PRO features are entirely optional. If you do not enter a license key, no external communication with our license server will occur.
+
+== Changelog ==
+
+= 1.2.3 =
+* Fixed: Replaced all external image fallback URLs (via.placeholder.com, gravatar.com) with locally bundled assets to comply with WordPress.org guideline on remote file calls.
+* Updated: Minimum PHP requirement raised to 8.0 to match WordPress 6.9.x recommended environment.
+* Updated: Tested up to WordPress 6.9.
+
+= 1.2.2 =
+* Security: Hardened all output escaping and input sanitization throughout the codebase.
+* Fixed: Plugin activation fatal error resolved by adopting a class-based initialization architecture.
+
+= 1.2.1 =
+* Initial public release candidate.
 

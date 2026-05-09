@@ -40,7 +40,7 @@ class Settings {
 		);
 
 		// PRO Log Submenu (Only if PRO is active)
-		if ( is_sgoplus_fs_pro_active() ) {
+		if ( sgoplus_fs_is_pro_active() ) {
 			add_submenu_page(
 				'edit.php?post_type=sgoplus_fs_file',
 				esc_html__( 'PRO Log', 'sgoplus-file-share' ),
@@ -136,7 +136,7 @@ class Settings {
 	}
 
 	public function render_settings_page() {
-		$is_pro = is_sgoplus_fs_pro_active();
+		$is_pro = sgoplus_fs_is_pro_active();
 		?>
 		<div class="wrap sgoplus-fs-settings-wrap" style="max-width: 1200px;">
 			<h1 style="margin-bottom: 20px;"><?php esc_html_e( 'SGOplus File Share Settings', 'sgoplus-file-share' ); ?></h1>
@@ -277,7 +277,7 @@ class Settings {
 		$table_name = $wpdb->prefix . 'sgoplus_fs_logs';
 		
 		// Re-check PRO status inside the page just in case
-		if ( ! is_sgoplus_fs_pro_active() ) {
+		if ( ! sgoplus_fs_is_pro_active() ) {
 			wp_die( esc_html__( 'This page is only available in the PRO version. Please activate your license.', 'sgoplus-file-share' ) );
 		}
 

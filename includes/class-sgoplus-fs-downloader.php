@@ -125,7 +125,7 @@ class Downloader {
 
 		// Acceleration Optimization (Gated by PRO License)
 		$accel_mode = get_option( 'sgoplus_fs_acceleration_mode', 'standard' );
-		if ( ! is_sgoplus_fs_pro_active() ) {
+		if ( ! sgoplus_fs_is_pro_active() ) {
 			$accel_mode = 'standard';
 		}
 

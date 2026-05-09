@@ -40,7 +40,7 @@ class Shortcode {
 		$update_log = get_post_meta( $post_id, '_sgoplus_fs_update_log', true );
 		$thumbnail = get_the_post_thumbnail_url( $post_id, 'medium' ) ?: SGOPLUS_FS_URL . 'assets/placeholder.png';
 		
-		$is_pro = is_sgoplus_fs_pro_active();
+		$is_pro = sgoplus_fs_is_pro_active();
 
 		// Check Role Access (Visual Feedback)
 		$allowed_roles = get_post_meta( $post_id, '_sgoplus_fs_allowed_roles', true );
