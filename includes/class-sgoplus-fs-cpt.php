@@ -8,6 +8,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class CPT {
 
+	public static function register_post_type_static() {
+		$instance = new self();
+		$instance->register_post_type();
+	}
+
 	public function register_post_type() {
 		$labels = array(
 			'name'               => esc_html__( 'Shared Files', 'sgoplus-file-share' ),
