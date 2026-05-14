@@ -20,14 +20,32 @@ jQuery(document).ready(function($) {
 		e.preventDefault();
 		if (typeof wp.media === 'undefined') return;
 
-		var image = wp.media({ 
-			title: 'Upload File',
+		var frame = wp.media({ 
+			title: 'Select or Upload File',
+			button: { text: 'Use this file' },
 			multiple: false
-		}).open()
-		.on('select', function(e){
-			var uploaded_image = image.state().get('selection').first();
-			var file_url = uploaded_image.toJSON().url;
-			$('#sgoplus_fs_file_url').val(file_url);
 		});
+
+		frame.on('select', function() {
+			var attachment = frame.state().get('selection').first().toJSON();
+			
+			$('#sgoplus_fs_file_url').val(attachment.url);
+			$('#sgoplus_fs_attachment_id').val(attachment.id);
+			
+			$('#sgoplus-fs-filename').text(attachment.filename);
+			$('#sgoplus-fs-selected-file-info').show();
+			$('#sgoplus_fs_upload_btn').text('Change File');
+		});
+
+		frame.open();
+	});
+
+	// Clear Selection
+	$('#sgoplus_fs_clear_btn').on('click', function(e) {
+		e.preventDefault();
+		$('#sgoplus_fs_file_url').val('');
+		$('#sgoplus_fs_attachment_id').val('');
+		$('#sgoplus-fs-selected-file-info').hide();
+		$('#sgoplus_fs_upload_btn').text('Select or Upload File');
 	});
 });

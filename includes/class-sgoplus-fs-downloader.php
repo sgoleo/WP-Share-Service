@@ -33,43 +33,6 @@ class Downloader {
 			wp_die( esc_html__( 'File not found.', 'sgoplus-file-share' ) );
 		}
 
-		// Check Role Access (PRO)
-		$allowed_roles = get_post_meta( $post_id, '_sgoplus_fs_allowed_roles', true );
-		if ( ! empty( $allowed_roles ) && is_array( $allowed_roles ) ) {
-			if ( ! is_user_logged_in() ) {
-				wp_die( esc_html__( 'Error: This file is restricted to members only. Please log in first.', 'sgoplus-file-share' ) );
-			}
-			$user = wp_get_current_user();
-			$user_roles = (array) $user->roles;
-			$has_access = false;
-			foreach ( $allowed_roles as $role ) {
-				if ( in_array( $role, $user_roles ) ) {
-					$has_access = true;
-					break;
-				}
-			}
-			if ( ! $has_access && ! current_user_can( 'administrator' ) ) {
-				wp_die( esc_html__( 'Error: You do not have the required role to download this file.', 'sgoplus-file-share' ) );
-			}
-		}
-
-		// Check Expiration Date (PRO)
-		$expiry_date = get_post_meta( $post_id, '_sgoplus_fs_expiry_date', true );
-		if ( ! empty( $expiry_date ) ) {
-			$today = gmdate( 'Y-m-d' );
-			if ( $today > $expiry_date ) {
-				wp_die( esc_html__( 'Error: This download link has expired.', 'sgoplus-file-share' ) );
-			}
-		}
-
-		// Check Download Limit (PRO)
-		$download_limit = get_post_meta( $post_id, '_sgoplus_fs_download_limit', true );
-		$current_count = get_post_meta( $post_id, '_sgoplus_fs_download_count', true ) ?: 0;
-		if ( ! empty( $download_limit ) && intval( $download_limit ) > 0 ) {
-			if ( intval( $current_count ) >= intval( $download_limit ) ) {
-				wp_die( esc_html__( 'Error: Download limit reached for this file.', 'sgoplus-file-share' ) );
-			}
-		}
 
 		// Verify Password
 		$hashed_password = get_post_meta( $post_id, '_sgoplus_fs_password', true );
@@ -81,37 +44,22 @@ class Downloader {
 		}
 
 		// Get File Info
+		$attachment_id = get_post_meta( $post_id, '_sgoplus_fs_attachment_id', true );
 		$file_url = get_post_meta( $post_id, '_sgoplus_fs_file_url', true );
-		if ( ! $file_url ) {
+		
+		if ( ! $file_url && ! $attachment_id ) {
 			wp_die( esc_html__( 'No file associated with this record.', 'sgoplus-file-share' ) );
 		}
 
-		$file_path = $this->url_to_path( $file_url );
+		$file_path = $this->url_to_path( $file_url, $attachment_id );
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			wp_die( esc_html__( 'Error: The requested file could not be found on the server.', 'sgoplus-file-share' ) );
 		}
 
-		// --- PRO Logic Start ---
-
-		// 1. Record Download Log
-		$this->record_download_log( $post_id );
-
-		// 2. Handle Email Notifications
-		$enable_notifications = get_post_meta( $post_id, '_sgoplus_fs_enable_notifications', true );
-		if ( $enable_notifications === 'yes' ) {
-			$to = get_option( 'admin_email' );
-			$subject = '[SGOplus File Share] New Download: ' . get_the_title( $post_id );
-			$user_info = is_user_logged_in() ? wp_get_current_user()->display_name : 'Guest';
-			$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'Unknown';
-			$message = "File: " . get_the_title( $post_id ) . "\nBy: " . $user_info . "\nIP: " . $ip_address . "\nTime: " . current_time( 'mysql' );
-			wp_mail( $to, $subject, $message );
-		}
-
-		// 3. Increment Download Count
+		// Increment Download Count
+		$current_count = get_post_meta( $post_id, '_sgoplus_fs_download_count', true ) ?: 0;
 		$count = intval( $current_count ) + 1;
 		update_post_meta( $post_id, '_sgoplus_fs_download_count', $count );
-
-		// --- PRO Logic End ---
 
 		// Clean output buffer
 		while ( ob_get_level() > 0 ) {
@@ -123,11 +71,8 @@ class Downloader {
 		$file_size = filesize( $file_path );
 		$mime_type = wp_check_filetype( $file_name )['type'] ?: 'application/octet-stream';
 
-		// Acceleration Optimization (Gated by PRO License)
+		// Acceleration Optimization
 		$accel_mode = get_option( 'sgoplus_fs_acceleration_mode', 'standard' );
-		if ( ! sgoplus_fs_is_pro_active() ) {
-			$accel_mode = 'standard';
-		}
 
 		// Server Detection for Compatibility
 		$server_soft = isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '';
@@ -151,14 +96,14 @@ class Downloader {
 		header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
 		header( 'Pragma: public' );
 
-		if ( $accel_mode === 'x_sendfile' ) {
+		if ( $accel_mode === 'sgoplus_fs_sendfile' ) {
 			header( 'X-Sendfile: ' . $file_path );
 			exit;
-		} elseif ( $accel_mode === 'x_accel' || $accel_mode === 'x_litespeed' ) {
+		} elseif ( $accel_mode === 'sgoplus_fs_accel' || $accel_mode === 'sgoplus_fs_litespeed' ) {
 			// Correctly determine relative URI without relying on hardcoded ABSPATH physical paths
 			$file_uri = str_replace( home_url(), '', $file_url );
 			$relative_path = '/' . ltrim( $file_uri, '/' );
-			if ( $accel_mode === 'x_litespeed' ) {
+			if ( $accel_mode === 'sgoplus_fs_litespeed' ) {
 				header( 'X-LiteSpeed-Location: ' . $relative_path );
 			} else {
 				header( 'X-Accel-Redirect: ' . $relative_path );
@@ -186,37 +131,16 @@ class Downloader {
 		exit;
 	}
 
-	private function record_download_log( $post_id ) {
-		global $wpdb;
-		$table_name = $wpdb->prefix . 'sgoplus_fs_logs';
-		
-		$user_id = get_current_user_id();
-		$user_status = is_user_logged_in() ? 'member' : 'guest';
-		$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'Unknown';
-		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : 'Unknown';
-		
-		// Basic Country Detection
-		$country = 'Unknown';
-		if ( isset( $_SERVER['HTTP_CF_IPCOUNTRY'] ) ) { // Cloudflare
-			$country = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_IPCOUNTRY'] ) );
+
+	private function url_to_path( $url, $attachment_id = 0 ) {
+		// Priority 1: Use Attachment ID (Most stable and fastest)
+		if ( ! empty( $attachment_id ) ) {
+			$path = get_attached_file( $attachment_id );
+			if ( $path && file_exists( $path ) ) {
+				return $path;
+			}
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$wpdb->insert(
-			$table_name,
-			array(
-				'file_id'     => $post_id,
-				'user_id'     => $user_id,
-				'user_status' => $user_status,
-				'ip_address'  => $ip_address,
-				'country'     => $country,
-				'user_agent'  => $user_agent,
-				'timestamp'   => current_time( 'mysql' ),
-			)
-		);
-	}
-
-	private function url_to_path( $url ) {
 		$upload_dir = wp_upload_dir();
 		$base_url = $upload_dir['baseurl'];
 		$base_path = $upload_dir['basedir'];

@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define constants (outside any namespace, so they are truly global).
 define( 'SGOPLUS_FS_VERSION', '1.2.3' );
-define( 'SGOPLUS_FS_PATH', plugin_dir_path( __FILE__ ) );
+define( 'SGOPLUS_FS_PATH', wp_normalize_path( plugin_dir_path( __FILE__ ) ) );
 define( 'SGOPLUS_FS_URL', plugin_dir_url( __FILE__ ) );
 
 // Include required classes.
@@ -36,8 +36,8 @@ require_once SGOPLUS_FS_PATH . 'includes/class-sgoplus-fs-settings.php';
  */
 if ( ! function_exists( 'sgoplus_fs_is_pro_active' ) ) {
 	function sgoplus_fs_is_pro_active() {
-		$license_status = get_option( 'sgoplus_fs_license_status' );
-		return ( isset( $license_status['isValid'] ) && $license_status['isValid'] === true );
+		// Permanently false for the Free version
+		return false;
 	}
 }
 

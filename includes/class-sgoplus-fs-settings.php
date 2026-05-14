@@ -15,15 +15,21 @@ class Settings {
 	}
 
 	public function enqueue_admin_assets( $hook ) {
-		// Only load on our plugin pages
-		if ( strpos( $hook, 'sgoplus-fs-' ) === false && strpos( $hook, 'sgoplus_fs_file' ) === false ) {
+		$screen = get_current_screen();
+		
+		// Load styles and scripts on our plugin settings pages and CPT pages
+		$is_plugin_settings = ( $screen && strpos( $screen->id, 'sgoplus-fs-' ) !== false );
+		$is_cpt_page = ( $screen && $screen->post_type === 'sgoplus_fs_file' );
+
+		if ( ! $is_plugin_settings && ! $is_cpt_page ) {
 			return;
 		}
 
 		wp_enqueue_style( 'sgoplus-fs-admin-style', SGOPLUS_FS_URL . 'assets/sgoplus-fs-admin.css', array(), SGOPLUS_FS_VERSION );
 		wp_enqueue_script( 'sgoplus-fs-admin-script', SGOPLUS_FS_URL . 'assets/sgoplus-fs-admin.js', array( 'jquery' ), SGOPLUS_FS_VERSION, true );
 		
-		if ( $hook === 'post.php' || $hook === 'post-new.php' ) {
+		// Enqueue WordPress Media Library for the CPT edit page
+		if ( $is_cpt_page && ( $hook === 'post.php' || $hook === 'post-new.php' ) ) {
 			wp_enqueue_media();
 		}
 	}
@@ -39,17 +45,6 @@ class Settings {
 			array( $this, 'render_settings_page' )
 		);
 
-		// PRO Log Submenu (Only if PRO is active)
-		if ( sgoplus_fs_is_pro_active() ) {
-			add_submenu_page(
-				'edit.php?post_type=sgoplus_fs_file',
-				esc_html__( 'PRO Log', 'sgoplus-file-share' ),
-				esc_html__( 'PRO Log', 'sgoplus-file-share' ),
-				'manage_options',
-				'sgoplus-fs-pro-log',
-				array( $this, 'render_pro_log_page' )
-			);
-		}
 
 		// Guild Page (Usage Guide)
 		add_submenu_page(
@@ -67,73 +62,8 @@ class Settings {
 			'sanitize_callback' => 'sanitize_text_field',
 			'default'           => 'standard',
 		) );
-		register_setting( 'sgoplus_fs_settings_group', 'sgoplus_fs_license_key', array(
-			'sanitize_callback' => array( $this, 'validate_license' ),
-		) );
 	}
 
-	/**
-	 * Validate License Key via Software License Manager (SLM) API
-	 */
-	public function validate_license( $key ) {
-		$key = sanitize_text_field( $key );
-		$old_key = get_option( 'sgoplus_fs_license_key' );
-		$license_status = get_option( 'sgoplus_fs_license_status' );
-		$is_currently_valid = ( isset( $license_status['isValid'] ) && $license_status['isValid'] === true );
-		
-		// If key is empty, reset status
-		if ( empty( $key ) ) {
-			update_option( 'sgoplus_fs_license_status', array( 'isValid' => false ) );
-			return $key;
-		}
-
-		// Optimization: If the key hasn't changed and it's already validated, skip the remote request.
-		if ( $key === $old_key && $is_currently_valid ) {
-			return $key;
-		}
-
-		// SLM API Config
-		$api_url    = 'https://virduct.com';
-		$secret_key = '69e5d4eb0cf195.93364420';
-		
-		// Build URL for wp_remote_get
-		$query_url = add_query_arg( array(
-			'slm_action'        => 'slm_activate',
-			'secret_key'        => $secret_key,
-			'license_key'       => $key,
-			'registered_domain' => home_url(),
-		), $api_url );
-
-		$response = wp_remote_get( $query_url, array( 'timeout' => 20 ) );
-
-		if ( is_wp_error( $response ) ) {
-			add_settings_error( 'sgoplus_fs_license_key', 'api_error', sprintf( 
-				/* translators: %s: connection error message */
-				esc_html__( 'Connection error: %s. Please try again in 3 seconds.', 'sgoplus-file-share' ), 
-				$response->get_error_message() 
-			) );
-			return $old_key; // Revert to old key to maintain state
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		// SLM returns result: 'success' or 'error'
-		$is_valid = ( isset( $data['result'] ) && $data['result'] === 'success' );
-
-		update_option( 'sgoplus_fs_license_status', array(
-			'isValid'     => $is_valid,
-			'lastChecked' => current_time( 'mysql' ),
-			'message'     => isset( $data['message'] ) ? sanitize_text_field( $data['message'] ) : ''
-		) );
-
-		if ( ! $is_valid ) {
-			$error_msg = isset( $data['message'] ) ? sanitize_text_field( $data['message'] ) : esc_html__( 'Invalid License Key.', 'sgoplus-file-share' );
-			add_settings_error( 'sgoplus_fs_license_key', 'invalid_key', $error_msg . ' ' . esc_html__( 'Please wait 3 seconds before trying again.', 'sgoplus-file-share' ) );
-		}
-
-		return $key;
-	}
 
 	public function render_settings_page() {
 		$is_pro = sgoplus_fs_is_pro_active();
@@ -150,41 +80,9 @@ class Settings {
 						do_settings_sections( 'sgoplus_fs_settings_group' );
 						?>
 						
-						<!-- License Card -->
-						<div class="card" style="margin: 0 0 20px 0; padding: 25px; border-radius: 12px; border: 1px solid <?php echo $is_pro ? '#d4edda' : '#e5e5e5'; ?>; box-shadow: 0 2px 4px rgba(0,0,0,0.02); max-width: none; width: 100%; box-sizing: border-box; background: <?php echo $is_pro ? '#fafffa' : '#fff'; ?>;">
-							<h2 style="margin-top: 0; font-size: 1.3em; display: flex; align-items: center; gap: 10px;">
-								<span class="dashicons dashicons-shield-alt" style="color: <?php echo $is_pro ? '#28a745' : '#0073aa'; ?>;"></span> 
-								<?php esc_html_e( 'PRO License Management', 'sgoplus-file-share' ); ?>
-							</h2>
-							<p style="color: #666; margin-bottom: 20px;"><?php esc_html_e( 'Enter your License Key to unlock all PRO features and premium support.', 'sgoplus-file-share' ); ?></p>
-							
-							<table class="form-table" style="margin-top: 0;">
-								<tr>
-									<th scope="row" style="width: 200px; padding: 15px 0;"><?php esc_html_e( 'License Key', 'sgoplus-file-share' ); ?></th>
-									<td>
-										<input type="text" name="sgoplus_fs_license_key" value="<?php echo esc_attr( get_option( 'sgoplus_fs_license_key' ) ); ?>" class="regular-text" style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;" placeholder="SFS-XXXX-XXXX-XXXX" />
-										<?php if ( $is_pro ) : ?>
-											<p style="color: #28a745; font-weight: 600; margin-top: 8px; display: flex; align-items: center; gap: 5px;">
-												<span class="dashicons dashicons-yes-alt"></span> <?php esc_html_e( 'PRO License is Active', 'sgoplus-file-share' ); ?>
-											</p>
-										<?php else : ?>
-											<p style="color: #d63031; font-weight: 600; margin-top: 8px;"><?php esc_html_e( 'License Inactive. Please activate to use PRO functions.', 'sgoplus-file-share' ); ?></p>
-										<?php endif; ?>
-									</td>
-								</tr>
-							</table>
-						</div>
 
 						<!-- Performance Optimization Card -->
 						<div class="card" style="margin: 0 0 20px 0; padding: 25px; border-radius: 12px; border: 1px solid #e5e5e5; box-shadow: 0 2px 4px rgba(0,0,0,0.02); max-width: none; width: 100%; box-sizing: border-box; position: relative;">
-							<?php if ( ! $is_pro ) : ?>
-								<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 10; border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
-									<div style="background: #fff; padding: 15px 25px; border-radius: 10px; border: 1px solid #e5e5e5; box-shadow: 0 5px 20px rgba(0,0,0,0.1); text-align: center;">
-										<p style="margin: 0 0 10px 0; font-weight: 700; color: #1d2327;"><?php esc_html_e( 'PRO Feature Locked', 'sgoplus-file-share' ); ?></p>
-										<p style="margin: 0; font-size: 0.9em; color: #666;"><?php esc_html_e( 'Please activate your license to enable acceleration.', 'sgoplus-file-share' ); ?></p>
-									</div>
-								</div>
-							<?php endif; ?>
 
 							<h2 style="margin-top: 0; font-size: 1.3em; display: flex; align-items: center; gap: 10px;">
 								<span class="dashicons dashicons-performance" style="color: #0073aa;"></span> 
@@ -198,9 +96,8 @@ class Settings {
 									<td>
 										<?php 
 										$mode = get_option( 'sgoplus_fs_acceleration_mode', 'standard' ); 
-										if ( ! $is_pro ) $mode = 'standard'; 
 										?>
-										<select name="sgoplus_fs_acceleration_mode" <?php echo ! $is_pro ? 'disabled' : ''; ?> style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;">
+										<select name="sgoplus_fs_acceleration_mode" style="width: 100%; max-width: 400px; height: 40px; border-radius: 6px;">
 											<option value="standard" <?php selected( $mode, 'standard' ); ?>><?php esc_html_e( 'Standard (PHP Chunked - Universal)', 'sgoplus-file-share' ); ?></option>
 											<option value="sgoplus_fs_sendfile" <?php selected( $mode, 'sgoplus_fs_sendfile' ); ?>><?php esc_html_e( 'X-Sendfile (Apache)', 'sgoplus-file-share' ); ?></option>
 											<option value="sgoplus_fs_accel" <?php selected( $mode, 'sgoplus_fs_accel' ); ?>><?php esc_html_e( 'X-Accel-Redirect (Nginx)', 'sgoplus-file-share' ); ?></option>
@@ -223,7 +120,7 @@ class Settings {
 										<p style="margin-bottom: 0; color: #444;"><?php esc_html_e( 'Upgrade to unlock advanced download analytics, role-based access control, and automated notifications.', 'sgoplus-file-share' ); ?></p>
 									</div>
 									<div style="text-align: right;">
-										<a href="https://sgoplus.one/file-share-service/" target="_blank" class="button button-primary" style="background: #6c5ce7; border-color: #6c5ce7; padding: 10px 25px; height: auto; font-weight: 600; border-radius: 8px; font-size: 1.1em; transition: all 0.2s;"><?php esc_html_e( 'Get PRO Version', 'sgoplus-file-share' ); ?></a>
+										<a href="https://sgoplus.one/siteservices/wp-file-share/" target="_blank" class="button button-primary" style="background: #6c5ce7; border-color: #6c5ce7; padding: 10px 25px; height: auto; font-weight: 600; border-radius: 8px; font-size: 1.1em; transition: all 0.2s;"><?php esc_html_e( 'Get PRO Version', 'sgoplus-file-share' ); ?></a>
 									</div>
 								</div>
 							</div>
@@ -272,110 +169,6 @@ class Settings {
 		<?php
 	}
 
-	public function render_pro_log_page() {
-		global $wpdb;
-		$table_name = $wpdb->prefix . 'sgoplus_fs_logs';
-		
-		// Re-check PRO status inside the page just in case
-		if ( ! sgoplus_fs_is_pro_active() ) {
-			wp_die( esc_html__( 'This page is only available in the PRO version. Please activate your license.', 'sgoplus-file-share' ) );
-		}
-
-		// Handle Clear Logs
-		if ( isset( $_POST['sgoplus_fs_clear_logs'] ) && check_admin_referer( 'sgoplus_fs_clear_logs_nonce' ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->query( $wpdb->prepare( "TRUNCATE TABLE %i", $table_name ) );
-			echo '<div class="updated"><p>' . esc_html__( 'Logs cleared successfully.', 'sgoplus-file-share' ) . '</p></div>';
-		}
-
-		$pagenum = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
-		$per_page = 20;
-		$offset = ( $pagenum - 1 ) * $per_page;
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total_logs = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(id) FROM %i", $table_name ) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i ORDER BY timestamp DESC LIMIT %d, %d", $table_name, $offset, $per_page ) );
-		
-		$num_pages = ceil( $total_logs / $per_page );
-		?>
-		<div class="wrap">
-			<h1 style="display: flex; align-items: center; gap: 10px;">
-				<span class="dashicons dashicons-list-view" style="font-size: 1.2em; width: auto; height: auto;"></span> 
-				<?php esc_html_e( 'PRO Download Logs', 'sgoplus-file-share' ); ?>
-			</h1>
-			<p><?php esc_html_e( 'Track every download event with detailed user information.', 'sgoplus-file-share' ); ?></p>
-
-			<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
-				<form method="post" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to clear all logs?', 'sgoplus-file-share' ) ); ?>');">
-					<?php wp_nonce_field( 'sgoplus_fs_clear_logs_nonce' ); ?>
-					<input type="submit" name="sgoplus_fs_clear_logs" class="button button-secondary" value="<?php echo esc_attr__( 'Clear All Logs', 'sgoplus-file-share' ); ?>" />
-				</form>
-				
-				<?php if ( $num_pages > 1 ) : ?>
-					<div class="tablenav-pages">
-						<span class="displaying-num"><?php echo sprintf( 
-							/* translators: %d: total number of items */
-							esc_html__( '%d items', 'sgoplus-file-share' ), 
-							intval( $total_logs ) 
-						); ?></span>
-						<?php
-						echo wp_kses_post( paginate_links( array(
-							'base'      => add_query_arg( 'paged', '%#%' ),
-							'format'    => '',
-							'prev_text' => esc_html__( '&laquo;', 'sgoplus-file-share' ),
-							'next_text' => esc_html__( '&raquo;', 'sgoplus-file-share' ),
-							'total'     => $num_pages,
-							'current'   => $pagenum,
-						) ) );
-						?>
-					</div>
-				<?php endif; ?>
-			</div>
-
-			<table class="wp-list-table widefat fixed striped">
-				<thead>
-					<tr>
-						<th style="width: 15%;"><?php esc_html_e( 'Time', 'sgoplus-file-share' ); ?></th>
-						<th style="width: 20%;"><?php esc_html_e( 'File', 'sgoplus-file-share' ); ?></th>
-						<th style="width: 15%;"><?php esc_html_e( 'User', 'sgoplus-file-share' ); ?></th>
-						<th style="width: 10%;"><?php esc_html_e( 'Status', 'sgoplus-file-share' ); ?></th>
-						<th style="width: 15%;"><?php esc_html_e( 'IP Address', 'sgoplus-file-share' ); ?></th>
-						<th style="width: 10%;"><?php esc_html_e( 'Country', 'sgoplus-file-share' ); ?></th>
-						<th><?php esc_html_e( 'User Agent', 'sgoplus-file-share' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php if ( $logs ) : ?>
-						<?php foreach ( $logs as $log ) : ?>
-							<?php 
-							$file_title = get_the_title( $log->file_id ) ?: '<em>' . esc_html__( 'Deleted File', 'sgoplus-file-share' ) . ' (ID: '.intval($log->file_id).')</em>';
-							$user_name = $log->user_id ? get_userdata( $log->user_id )->display_name : 'Guest';
-							?>
-							<tr>
-								<td><?php echo esc_html( $log->timestamp ); ?></td>
-								<td><strong><?php echo wp_kses_post( $file_title ); ?></strong></td>
-								<td><?php echo esc_html( $user_name ); ?></td>
-								<td>
-									<span class="status-tag" style="background: <?php echo $log->user_status === 'member' ? '#e7f7ff' : '#f8f9fa'; ?>; color: <?php echo $log->user_status === 'member' ? '#0073aa' : '#666'; ?>; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600;">
-										<?php echo esc_html( ucfirst( $log->user_status ) ); ?>
-									</span>
-								</td>
-								<td><code><?php echo esc_html( $log->ip_address ); ?></code></td>
-								<td><span class="dashicons dashicons-location"></span> <?php echo esc_html( $log->country ); ?></td>
-								<td title="<?php echo esc_attr( $log->user_agent ); ?>"><small style="color: #888;"><?php echo esc_html( wp_trim_words( $log->user_agent, 6 ) ); ?></small></td>
-							</tr>
-						<?php endforeach; ?>
-					<?php else : ?>
-						<tr>
-							<td colspan="7" style="text-align: center; padding: 40px;"><?php esc_html_e( 'No download records found yet.', 'sgoplus-file-share' ); ?></td>
-						</tr>
-					<?php endif; ?>
-				</tbody>
-			</table>
-		</div>
-		<?php
-	}
 
 	/**
 	 * Render the Guild (Usage Guide) page

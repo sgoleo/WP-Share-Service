@@ -136,52 +136,45 @@ class CPT {
 		echo '</div>';
 
 		echo '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">';
-			echo '<div><label><strong>' . esc_html__( 'File Upload:', 'sgoplus-file-share' ) . '</strong></label><br>';
-			echo '<input type="text" id="sgoplus_fs_file_url" name="sgoplus_fs_file_url" value="' . esc_attr( $file_url ) . '" style="width:70%;" /> ';
-			echo '<button type="button" class="button" id="sgoplus_fs_upload_btn">' . esc_html__( 'Select', 'sgoplus-file-share' ) . '</button></div>';
+			echo '<div><label><strong>' . esc_html__( 'File Upload / Selection:', 'sgoplus-file-share' ) . '</strong></label><br>';
+			echo '<div id="sgoplus-fs-file-selector-container" style="margin-top: 10px;">';
+				$attachment_id = get_post_meta( $post->ID, '_sgoplus_fs_attachment_id', true );
+				$filename = $attachment_id ? basename( get_attached_file( $attachment_id ) ) : '';
+				
+				echo '<div id="sgoplus-fs-selected-file-info" style="' . ( $file_url ? 'display: block;' : 'display: none;' ) . ' margin-bottom: 10px; padding: 10px; background: #f9f9f9; border: 1px dashed #ccc; border-radius: 4px;">';
+					echo '<span class="dashicons dashicons-media-default" style="vertical-align: middle; margin-right: 5px;"></span>';
+					echo '<span id="sgoplus-fs-filename" style="font-weight: 600;">' . esc_html( $filename ?: basename( $file_url ) ) . '</span>';
+					echo ' <a href="#" id="sgoplus_fs_clear_btn" style="color: #d63031; text-decoration: none; margin-left: 10px; font-size: 0.9em;">[' . esc_html__( 'Clear', 'sgoplus-file-share' ) . ']</a>';
+				echo '</div>';
+
+				echo '<input type="hidden" id="sgoplus_fs_file_url" name="sgoplus_fs_file_url" value="' . esc_attr( $file_url ) . '" />';
+				echo '<input type="hidden" id="sgoplus_fs_attachment_id" name="sgoplus_fs_attachment_id" value="' . esc_attr( $attachment_id ) . '" />';
+				echo '<button type="button" class="button button-secondary" id="sgoplus_fs_upload_btn">' . ( $file_url ? esc_html__( 'Change File', 'sgoplus-file-share' ) : esc_html__( 'Select or Upload File', 'sgoplus-file-share' ) ) . '</button>';
+				echo '<p class="description">' . esc_html__( 'Choose a file from the Media Library or upload a new one.', 'sgoplus-file-share' ) . '</p>';
+			echo '</div></div>';
 			
-			echo '<div><label><strong>' . esc_html__( 'Password:', 'sgoplus-file-share' ) . '</strong>' . esc_html( $has_password ) . '</label><br>';
-			echo '<div style="display:flex; gap:10px; align-items:center;">';
-			echo '<input type="password" name="sgoplus_fs_password" value="" placeholder="' . esc_attr__( 'Set new password', 'sgoplus-file-share' ) . '" style="flex:1;" />';
+			echo '<div><label><strong>' . esc_html__( 'Password Protection:', 'sgoplus-file-share' ) . '</strong>' . esc_html( $has_password ) . '</label><br>';
+			echo '<div style="display:flex; gap:10px; align-items:center; margin-top: 10px;">';
+			echo '<input type="password" name="sgoplus_fs_password" value="" placeholder="' . esc_attr__( 'Set new password', 'sgoplus-file-share' ) . '" style="flex:1; height: 30px;" />';
 			if ( get_post_meta( $post->ID, '_sgoplus_fs_password', true ) ) {
 				echo '<label style="color:#d63031; font-weight:600; cursor:pointer;"><input type="checkbox" name="sgoplus_fs_clear_password" value="1" /> ' . esc_html__( 'Clear', 'sgoplus-file-share' ) . '</label>';
 			}
 			echo '</div></div>';
 		echo '</div>';
 
-		// PRO Advanced Controls Section
-		echo '<div style="background: #fcfcfc; padding: 20px; border: 1px solid #eee; border-radius: 12px; margin-bottom: 20px; position: relative;">';
-			
-			if ( ! $is_pro ) {
-				echo '<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 10; border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);">';
-				echo '<div style="background: #fff; padding: 10px 20px; border-radius: 8px; border: 1px solid #e5e5e5; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;">';
-				echo '<p style="margin: 0; font-weight: 700; color: #6c5ce7; display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-lock"></span> ' . esc_html__( 'PRO License Required', 'sgoplus-file-share' ) . '</p>';
-				echo '</div></div>';
-			}
-
-			echo '<h4 style="margin: 0 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 10px; color: #6c5ce7; display: flex; align-items: center; gap: 10px;"><span class="dashicons dashicons-star-filled"></span> ' . esc_html__( 'PRO: Advanced Controls', 'sgoplus-file-share' ) . '</h4>';
-			
-			echo '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 20px;">';
-				echo '<div><label><strong>' . esc_html__( 'Download Limit (Max):', 'sgoplus-file-share' ) . '</strong></label><br>';
-				echo '<input type="number" name="sgoplus_fs_download_limit" value="' . esc_attr( $download_limit ) . '" placeholder="' . esc_attr__( '0 = Unlimited', 'sgoplus-file-share' ) . '" style="width:100%;" ' . ( ! $is_pro ? 'disabled' : '' ) . ' /></div>';
-				
-				echo '<div><label><strong>' . esc_html__( 'Expiration Date:', 'sgoplus-file-share' ) . '</strong></label><br>';
-				echo '<input type="date" name="sgoplus_fs_expiry_date" value="' . esc_attr( $expiry_date ) . '" style="width:100%;" ' . ( ! $is_pro ? 'disabled' : '' ) . ' /></div>';
+		// PRO Advanced Controls Section (Compact & Blurred for Promotion)
+		echo '<div style="background: #fcfcfc; padding: 15px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 20px; position: relative; overflow: hidden;">';
+			echo '<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px);">';
+				echo '<p style="margin: 0 0 10px 0; font-weight: 700; color: #6c5ce7; display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-lock"></span> ' . esc_html__( 'Advanced Controls (PRO)', 'sgoplus-file-share' ) . '</p>';
+				echo '<a href="https://sgoplus.one/siteservices/wp-file-share/" target="_blank" class="button button-primary" style="background: #6c5ce7; border: none; font-size: 0.85em;">' . esc_html__( 'Upgrade to Unlock', 'sgoplus-file-share' ) . '</a>';
 			echo '</div>';
 
-			echo '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">';
-				echo '<div><label><strong>' . esc_html__( 'Allowed User Roles:', 'sgoplus-file-share' ) . '</strong> (' . esc_html__( 'Multiple', 'sgoplus-file-share' ) . ')</label><br>';
-				echo '<div style="background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 5px; max-height: 120px; overflow-y: auto;">';
-				global $wp_roles;
-				foreach ( $wp_roles->role_names as $role_slug => $role_name ) {
-					$checked = in_array( $role_slug, $allowed_roles ) ? 'checked' : '';
-					$disabled = ! $is_pro ? 'disabled' : '';
-					echo '<label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="sgoplus_fs_allowed_roles[]" value="' . esc_attr( $role_slug ) . '" ' . esc_attr( $checked ) . ' ' . esc_attr( $disabled ) . '> ' . esc_html( $role_name ) . '</label>';
-				}
-				echo '</div><p style="font-size: 0.85em; color: #666;">' . esc_html__( 'If none selected, role restriction is disabled.', 'sgoplus-file-share' ) . '</p></div>';
-				
-				echo '<div><label><strong>' . esc_html__( 'Notifications:', 'sgoplus-file-share' ) . '</strong></label><br>';
-				echo '<label style="display: block; margin-top: 10px;"><input type="checkbox" name="sgoplus_fs_enable_notifications" value="yes" ' . checked( $enable_notifications, 'yes', false ) . ' ' . ( ! $is_pro ? 'disabled' : '' ) . '> ' . esc_html__( 'Send email to Admin on each download', 'sgoplus-file-share' ) . '</label></div>';
+			echo '<h4 style="margin: 0 0 10px 0; color: #999; font-size: 0.9em; display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-star-filled"></span> ' . esc_html__( 'PRO Features Preview', 'sgoplus-file-share' ) . '</h4>';
+			echo '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; opacity: 0.3; pointer-events: none;">';
+				echo '<div><small><strong>' . esc_html__( 'Download Limit', 'sgoplus-file-share' ) . '</strong></small><br><input type="number" disabled style="width:100%; height: 24px;"></div>';
+				echo '<div><small><strong>' . esc_html__( 'Expiration Date', 'sgoplus-file-share' ) . '</strong></small><br><input type="date" disabled style="width:100%; height: 24px;"></div>';
+				echo '<div><small><strong>' . esc_html__( 'Role Restriction', 'sgoplus-file-share' ) . '</strong></small><br><div style="border: 1px solid #ddd; height: 40px; background: #fff;"></div></div>';
+				echo '<div><small><strong>' . esc_html__( 'Notifications', 'sgoplus-file-share' ) . '</strong></small><br><label><input type="checkbox" disabled> Email on Download</label></div>';
 			echo '</div>';
 		echo '</div>';
 
@@ -205,7 +198,12 @@ class CPT {
 
 		// Save File URL
 		if ( isset( $_POST['sgoplus_fs_file_url'] ) ) {
-			update_post_meta( $post_id, '_sgoplus_fs_file_url', sanitize_text_field( wp_unslash( $_POST['sgoplus_fs_file_url'] ) ) );
+			update_post_meta( $post_id, '_sgoplus_fs_file_url', esc_url_raw( wp_unslash( $_POST['sgoplus_fs_file_url'] ) ) );
+		}
+
+		// Save Attachment ID
+		if ( isset( $_POST['sgoplus_fs_attachment_id'] ) ) {
+			update_post_meta( $post_id, '_sgoplus_fs_attachment_id', sanitize_text_field( wp_unslash( $_POST['sgoplus_fs_attachment_id'] ) ) );
 		}
 
 		// Save Update Log
@@ -222,25 +220,5 @@ class CPT {
 			update_post_meta( $post_id, '_sgoplus_fs_password', $hashed_password );
 		}
 
-		// Only save PRO meta if license is active
-		if ( sgoplus_fs_is_pro_active() ) {
-			// PRO: Download Limit
-			if ( isset( $_POST['sgoplus_fs_download_limit'] ) ) {
-				update_post_meta( $post_id, '_sgoplus_fs_download_limit', intval( wp_unslash( $_POST['sgoplus_fs_download_limit'] ) ) );
-			}
-
-			// PRO: Expiry Date
-			if ( isset( $_POST['sgoplus_fs_expiry_date'] ) ) {
-				update_post_meta( $post_id, '_sgoplus_fs_expiry_date', sanitize_text_field( wp_unslash( $_POST['sgoplus_fs_expiry_date'] ) ) );
-			}
-
-			// PRO: Allowed Roles
-			$roles = isset( $_POST['sgoplus_fs_allowed_roles'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['sgoplus_fs_allowed_roles'] ) ) : array();
-			update_post_meta( $post_id, '_sgoplus_fs_allowed_roles', $roles );
-
-			// PRO: Notifications
-			$notify = isset( $_POST['sgoplus_fs_enable_notifications'] ) ? 'yes' : 'no';
-			update_post_meta( $post_id, '_sgoplus_fs_enable_notifications', $notify );
-		}
 	}
 }

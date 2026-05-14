@@ -42,38 +42,9 @@ class Shortcode {
 		
 		$is_pro = sgoplus_fs_is_pro_active();
 
-		// Check Role Access (Visual Feedback)
-		$allowed_roles = get_post_meta( $post_id, '_sgoplus_fs_allowed_roles', true );
-		$is_members_only = ( ! empty( $allowed_roles ) && is_array( $allowed_roles ) );
 		$role_restricted = false;
-		if ( ! empty( $allowed_roles ) && is_array( $allowed_roles ) ) {
-			if ( ! is_user_logged_in() ) {
-				$role_restricted = true;
-			} else {
-				$user = wp_get_current_user();
-				$user_roles = (array) $user->roles;
-				$has_access = false;
-				foreach ( $allowed_roles as $role ) {
-					if ( in_array( $role, $user_roles ) ) {
-						$has_access = true;
-						break;
-					}
-				}
-				if ( ! $has_access && ! current_user_can( 'administrator' ) ) {
-					$role_restricted = true;
-				}
-			}
-		}
-
-		// Check Expiry
-		$expiry_date = get_post_meta( $post_id, '_sgoplus_fs_expiry_date', true );
 		$is_expired = false;
-		if ( ! empty( $expiry_date ) ) {
-			$today = gmdate( 'Y-m-d' );
-			if ( $today > $expiry_date ) {
-				$is_expired = true;
-			}
-		}
+		$is_members_only = false;
 
 		$has_password = (bool) get_post_meta( $post_id, '_sgoplus_fs_password', true );
 		$btn_text = $has_password ? esc_html__( 'Download Protected', 'sgoplus-file-share' ) : esc_html__( 'Download Now', 'sgoplus-file-share' );
@@ -105,9 +76,6 @@ class Shortcode {
 			<div class="sgoplus-fs-card-media">
 				<div class="sgoplus-fs-media-inner">
 					<img src="<?php echo esc_url( $thumbnail ); ?>" alt="<?php echo esc_attr( $title ); ?>">
-					<?php if ( $is_members_only ) : ?>
-						<div class="sgoplus-fs-badge-overlay"><?php esc_html_e( 'MEMBERS', 'sgoplus-file-share' ); ?></div>
-					<?php endif; ?>
 					
 					<!-- Changelog Overlay -->
 					<?php if ( ! empty( $update_log ) ) : ?>
